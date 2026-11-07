@@ -1,3 +1,8 @@
+import type { Nutrients } from './calc.js';
+import type { MealType } from './constants.js';
+
+export type { MealType, Nutrients };
+
 export type BodyLog = {
   date: string;
   weightKg: number | null;
@@ -22,6 +27,43 @@ export type BodyLogDetail = {
   previousBodyFat: BodyFatPoint | null;
   /** その日より前の最新の体重 */
   previousWeight: { date: string; weightKg: number } | null;
+};
+
+export type MealEntry = {
+  id: number;
+  date: string;
+  mealType: MealType;
+  sortOrder: number;
+  foodName: string;
+  amountNote: string | null;
+  foodId: number | null;
+  multiplier: number | null;
+  kcal: number;
+  proteinG: number;
+  fatG: number;
+  carbsG: number;
+  memo: string | null;
+};
+
+export type Goal = {
+  id: number;
+  startDate: string;
+  kcal: number;
+  proteinG: number;
+  fatG: number;
+  carbsG: number;
+  targetWeightKg: number | null;
+  targetBodyFatPct: number | null;
+  targetDate: string | null;
+};
+
+export type DayMeals = {
+  date: string;
+  entries: MealEntry[];
+  subtotals: Record<MealType, Nutrients>;
+  total: Nutrients;
+  /** その日に適用される目標（未設定なら null） */
+  goal: Goal | null;
 };
 
 export type DailyStat = {
@@ -60,6 +102,9 @@ export type Dashboard = {
     leanBodyMassKg: number | null;
     fatMassKg: number | null;
   };
+  /** その日の摂取合計（食事の記録がなければ 0） */
+  intake: Nutrients & { count: number };
+  goal: Goal | null;
 };
 
 export type BackupInfo = { file: string; createdAt: string; sizeBytes: number };

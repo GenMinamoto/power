@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { addDays, formatJaLong, isValidDate, today } from '../../shared/date';
-import { useBodyLog } from '../api/hooks';
+import { MEAL_TYPES } from '../../shared/constants';
+import { useBodyLog, useMeals } from '../api/hooks';
 import { BodyLogForm } from '../components/BodyLogForm';
 import { ErrorNotice } from '../components/Feedback';
+import { IntakeProgress } from '../components/IntakeProgress';
+import { MealSection } from '../components/MealSection';
 
 export function RecordPage() {
   const { date } = useParams();
@@ -13,7 +16,7 @@ export function RecordPage() {
   useEffect(() => {
     if (!date) return;
     const onKey = (e: KeyboardEvent) => {
-      if (!e.altKey) return;
+      if (!e.altKey || e.ctrlKey || e.metaKey) return;
       if (e.key === 'ArrowLeft') navigate(`/record/${addDays(date, -1)}`);
       if (e.key === 'ArrowRight') navigate(`/record/${addDays(date, 1)}`);
     };
@@ -59,12 +62,28 @@ function RecordContent({ date }: { date: string }) {
       <ErrorNotice error={body.error} />
       {body.data && <BodyLogForm date={date} detail={body.data} />}
 
-      <div className="card">
-        <h2>食事</h2>
-        <p className="muted small" style={{ margin: 0 }}>
-          食事の記録（朝食・昼食・夕食・その他）はフェーズ2で追加します。
-        </p>
-      </div>
+      <MealsCard date={date} />
+    </div>
+  );
+}
+
+function MealsCard({ date }: { date: string }) {
+  const meals = useMeals(date);
+  const d = meals.data;
+  return (
+    <div className="card stack">
+      <h2>食事</h2>
+      <ErrorNotice error={meals.error} />
+      {d &&
+        MEAL_TYPES.map((t) => (
+          <MealSection key={t} date={date} mealType={t} entries={d.entries.filter((e) => e.mealType === t)} subtotal={d.subtotals[t]} />
+        ))}
+      {d && (
+        <div className="daily-total">
+          <h3>1日合計</h3>
+          <IntakeProgress intake={d.total} goal={d.goal} />
+        </div>
+      )}
     </div>
   );
 }

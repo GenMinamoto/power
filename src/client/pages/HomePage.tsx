@@ -3,6 +3,7 @@ import { addDays, diffDays, formatJa, formatShort, today } from '../../shared/da
 import { useDashboard, useStatsDaily } from '../api/hooks';
 import { SparseLineChart, WeightChart } from '../components/charts';
 import { ErrorNotice, WarningNotice } from '../components/Feedback';
+import { IntakeProgress } from '../components/IntakeProgress';
 import type { DailyStat } from '../../shared/types';
 
 const pickLbm = (d: DailyStat) => d.leanBodyMassKg;
@@ -86,6 +87,16 @@ export function HomePage() {
             </div>
           </div>
         </>
+      )}
+
+      {d && (
+        <div className="card">
+          <div className="row" style={{ marginBottom: 8 }}>
+            <h2 style={{ margin: 0 }}>今日の摂取</h2>
+            <span className="small muted">{d.intake.count}品</span>
+          </div>
+          <IntakeProgress intake={d.intake} goal={d.goal} />
+        </div>
       )}
 
       <div className="card chart-card">

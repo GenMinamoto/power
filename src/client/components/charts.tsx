@@ -1,19 +1,24 @@
 import {
+  BarController,
+  BarElement,
   CategoryScale,
   Chart as ChartJS,
   LinearScale,
+  LineController,
   LineElement,
   PointElement,
   Tooltip,
+  type ChartData,
   type ChartDataset,
   type ChartOptions,
 } from 'chart.js';
 import { useEffect, useMemo, useState } from 'react';
-import { Line } from 'react-chartjs-2';
+import { Bar, Chart, Line } from 'react-chartjs-2';
 import { formatShort } from '../../shared/date';
 import type { DailyStat } from '../../shared/types';
+import { fmtG } from '../utils/num';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, BarController, LineController, Tooltip);
 
 type Colors = {
   text: string;
@@ -23,6 +28,7 @@ type Colors = {
   series1: string;
   series1Soft: string;
   series2: string;
+  series3: string;
 };
 
 function readColors(): Colors {
@@ -36,6 +42,7 @@ function readColors(): Colors {
     series1: v('--series-1'),
     series1Soft: v('--series-1-soft'),
     series2: v('--series-2'),
+    series3: v('--series-3'),
   };
 }
 
@@ -51,8 +58,13 @@ function useChartColors(): Colors {
   return colors;
 }
 
-function baseOptions(c: Colors, unit: string): ChartOptions<'line'> {
-  return {
+/** 折れ線・棒グラフ共通の設定。scales.y は線形軸として扱えるよう型を付ける */
+type BaseOptions<T extends 'line' | 'bar'> = ChartOptions<T> & {
+  scales: { x: { stacked?: boolean }; y: { stacked?: boolean; beginAtZero?: boolean } };
+};
+
+function baseOptions<T extends 'line' | 'bar'>(c: Colors, unit: string): BaseOptions<T> {
+  const o: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
@@ -68,7 +80,7 @@ function baseOptions(c: Colors, unit: string): ChartOptions<'line'> {
         padding: 10,
         filter: (item) => item.parsed.y != null,
         callbacks: {
-          label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1)} ${unit}`,
+          label: (ctx) => ` ${ctx.dataset.label}: ${(ctx.parsed.y as number | null)?.toFixed(1)} ${unit}`,
         },
       },
     },
@@ -86,6 +98,7 @@ function baseOptions(c: Colors, unit: string): ChartOptions<'line'> {
       },
     },
   };
+  return o as unknown as BaseOptions<T>;
 }
 
 function Empty({ text }: { text: string }) {
@@ -155,7 +168,7 @@ export function WeightChart({ days, height = 260 }: { days: DailyStat[]; height?
     return { labels: days.map((d) => formatShort(d.date)), datasets };
   }, [days, c, hasGoal]);
 
-  const options = useMemo(() => baseOptions(c, 'kg'), [c]);
+  const options = useMemo(() => baseOptions<'line'>(c, 'kg'), [c]);
 
   return (
     <>
@@ -220,7 +233,7 @@ export function SparseLineChart({
   );
 
   const options = useMemo(() => {
-    const o = baseOptions(c, unit);
+    const o = baseOptions<'line'>(c, unit);
     // 前回測定からの変化をツールチップに出す
     o.plugins!.tooltip!.callbacks = {
       label: (ctx) => {
@@ -241,5 +254,185 @@ export function SparseLineChart({
         <Empty text={emptyText} />
       )}
     </div>
+  );
+}
+
+const barBase = {
+  maxBarThickness: 18,
+  categoryPercentage: 0.8,
+  barPercentage: 0.9,
+} as const;
+
+/** 摂取カロリー：日別の棒＋目標の線（目標設定時のみ） */
+export function KcalChart({ days, height = 260 }: { days: DailyStat[]; height?: number }) {
+  const c = useChartColors();
+  const hasData = days.some((d) => d.kcal != null);
+  const hasGoal = days.some((d) => d.goalKcal != null);
+
+  const data = useMemo(() => {
+    const datasets: ChartDataset<'bar' | 'line', (number | null)[]>[] = [
+      {
+        type: 'bar',
+        label: '摂取カロリー',
+        data: days.map((d) => d.kcal),
+        backgroundColor: c.series1,
+        borderRadius: { topLeft: 4, topRight: 4 },
+        borderSkipped: 'bottom',
+        ...barBase,
+        order: 2,
+      },
+    ];
+    if (hasGoal) {
+      datasets.push({
+        type: 'line',
+        label: '目標',
+        data: days.map((d) => d.goalKcal),
+        borderColor: c.muted,
+        backgroundColor: c.muted,
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        stepped: 'middle',
+        order: 1,
+      });
+    }
+    return { labels: days.map((d) => formatShort(d.date)), datasets } as ChartData<'bar' | 'line', (number | null)[]>;
+  }, [days, c, hasGoal]);
+
+  const options = useMemo(() => {
+    const o = baseOptions<'bar'>(c, 'kcal');
+    o.plugins!.tooltip!.callbacks = {
+      label: (ctx) => ` ${ctx.dataset.label}: ${Math.round(ctx.parsed.y as number).toLocaleString()} kcal`,
+    };
+    o.scales!.y!.beginAtZero = true;
+    return o as ChartOptions<'bar' | 'line'>;
+  }, [c]);
+
+  return (
+    <>
+      {hasGoal && (
+        <Legend
+          items={[
+            { label: '摂取カロリー', color: c.series1, kind: 'dot' },
+            { label: '目標', color: c.muted, kind: 'dashed' },
+          ]}
+        />
+      )}
+      <div className="chart-box" style={{ height }}>
+        {hasData ? (
+          <Chart type="bar" data={data} options={options} aria-label="摂取カロリーの推移グラフ" role="img" />
+        ) : (
+          <Empty text="この期間の食事の記録はまだありません" />
+        )}
+      </div>
+    </>
+  );
+}
+
+const PFC = [
+  { key: 'proteinG', label: 'P（たんぱく質）', short: 'P', factor: 4, color: 'series1' },
+  { key: 'fatG', label: 'F（脂質）', short: 'F', factor: 9, color: 'series2' },
+  { key: 'carbsG', label: 'C（炭水化物）', short: 'C', factor: 4, color: 'series3' },
+] as const;
+
+/** PFC：日別の積み上げ棒（kcal 換算）と、期間平均の表 */
+export function PfcChart({ days, height = 260 }: { days: DailyStat[]; height?: number }) {
+  const c = useChartColors();
+  const withMeals = days.filter((d) => d.kcal != null);
+
+  const data = useMemo(
+    () => ({
+      labels: days.map((d) => formatShort(d.date)),
+      datasets: PFC.map((m, i) => ({
+        label: m.short,
+        data: days.map((d) => (d[m.key] == null ? null : Math.round(d[m.key]! * m.factor))),
+        backgroundColor: c[m.color],
+        // 積み上げの区切りに背景色の 2px のすき間を入れる
+        borderColor: c.surface,
+        borderWidth: i === 0 ? 0 : { top: 0, bottom: 2, left: 0, right: 0 },
+        borderSkipped: false as const,
+        borderRadius: i === PFC.length - 1 ? { topLeft: 4, topRight: 4 } : 0,
+        stack: 'pfc',
+        ...barBase,
+      })),
+    }),
+    [days, c],
+  );
+
+  const options = useMemo(() => {
+    const o = baseOptions<'bar'>(c, 'kcal');
+    o.scales!.x!.stacked = true;
+    o.scales!.y!.stacked = true;
+    o.scales!.y!.beginAtZero = true;
+    o.plugins!.tooltip!.callbacks = {
+      label: (ctx) => {
+        const m = PFC[ctx.datasetIndex]!;
+        const g = days[ctx.dataIndex]![m.key] ?? 0;
+        const total = days[ctx.dataIndex]!.kcal ?? 0;
+        const kcal = ctx.parsed.y as number;
+        const pct = total > 0 ? Math.round((kcal / Math.max(total, 1)) * 100) : 0;
+        return ` ${m.short}: ${fmtG(g)}g（${kcal}kcal・${pct}%）`;
+      },
+      footer: (items) => {
+        const d = days[items[0]!.dataIndex]!;
+        return d.kcal != null ? `合計 ${d.kcal.toLocaleString()} kcal` : '';
+      },
+    };
+    return o;
+  }, [c, days]);
+
+  // 期間平均（食事を記録した日のみ）
+  const avg = (k: 'proteinG' | 'fatG' | 'carbsG' | 'kcal') =>
+    withMeals.length ? withMeals.reduce((s, d) => s + (d[k] ?? 0), 0) / withMeals.length : 0;
+  const avgKcal = avg('kcal');
+  const pfcKcal = PFC.map((m) => avg(m.key) * m.factor);
+  const pfcTotal = pfcKcal.reduce((a, b) => a + b, 0);
+
+  return (
+    <>
+      <Legend items={PFC.map((m) => ({ label: m.label, color: c[m.color], kind: 'dot' as const }))} />
+      <div className="chart-box" style={{ height }}>
+        {withMeals.length > 0 ? (
+          <Bar data={data} options={options} aria-label="PFC の推移グラフ" role="img" />
+        ) : (
+          <Empty text="この期間の食事の記録はまだありません" />
+        )}
+      </div>
+      {withMeals.length > 0 && (
+        <div className="table-wrap">
+          <table className="data pfc-table">
+            <caption className="small muted">期間平均（食事を記録した {withMeals.length} 日）</caption>
+            <thead>
+              <tr>
+                <th></th>
+                <th>1日平均</th>
+                <th>kcal</th>
+                <th>比率</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PFC.map((m, i) => (
+                <tr key={m.key}>
+                  <td>
+                    <span className="legend-swatch dot" style={{ background: c[m.color], display: 'inline-block', marginRight: 6 }} />
+                    {m.label}
+                  </td>
+                  <td>{Math.round(avg(m.key))} g</td>
+                  <td>{Math.round(pfcKcal[i]!).toLocaleString()}</td>
+                  <td>{pfcTotal > 0 ? Math.round((pfcKcal[i]! / pfcTotal) * 100) : 0}%</td>
+                </tr>
+              ))}
+              <tr>
+                <td>カロリー</td>
+                <td>{Math.round(avgKcal).toLocaleString()} kcal</td>
+                <td></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
   );
 }
