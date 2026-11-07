@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { today } from '../../shared/date';
 import type { DailyStat } from '../../shared/types';
 import { useStatsDaily } from '../api/hooks';
-import { SparseLineChart, WeightChart } from '../components/charts';
+import { KcalChart, PfcChart, SparseLineChart, WeightChart } from '../components/charts';
 import { ErrorNotice } from '../components/Feedback';
 import { filterRange, RangeSelector, type RangeKey } from '../components/RangeSelector';
 
@@ -72,6 +72,19 @@ export function ChartsPage() {
           </p>
           <SparseLineChart days={days} pick={pickFatMass} label="体脂肪量" unit="kg" color="series2" emptyText={empty} />
         </div>
+      </div>
+
+      <div className="card chart-card">
+        <h2>摂取カロリー</h2>
+        <KcalChart days={days} />
+      </div>
+
+      <div className="card chart-card">
+        <h2>PFC バランス</h2>
+        <p className="small muted" style={{ margin: '0 0 8px' }}>
+          1日ごとの P・F・C をカロリー換算で積み上げています
+        </p>
+        <PfcChart days={days} />
       </div>
     </div>
   );

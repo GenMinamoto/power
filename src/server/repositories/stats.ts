@@ -4,6 +4,8 @@ import { addDays, diffDays, rangeDays } from '../../shared/date.js';
 import type { Dashboard, DailyStat } from '../../shared/types.js';
 import type { Db } from '../db.js';
 import { BodyLogRepository } from './bodyLogs.js';
+import { GoalRepository } from './goals.js';
+import { MealRepository } from './meals.js';
 
 type GoalRow = {
   start_date: string;
@@ -16,9 +18,13 @@ type GoalRow = {
 
 export class StatsRepository {
   private bodyLogs: BodyLogRepository;
+  private meals: MealRepository;
+  private goals: GoalRepository;
 
   constructor(private db: Db) {
     this.bodyLogs = new BodyLogRepository(db);
+    this.meals = new MealRepository(db);
+    this.goals = new GoalRepository(db);
   }
 
   /** 最初の記録日（体組成・食事のうち早い方）。記録がなければ null */
@@ -106,6 +112,8 @@ export class StatsRepository {
         leanBodyMassKg: fat?.leanBodyMassKg ?? null,
         fatMassKg: fat?.fatMassKg ?? null,
       },
+      intake: this.meals.total(date),
+      goal: this.goals.effective(date),
     };
   }
 }

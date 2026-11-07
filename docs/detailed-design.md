@@ -330,8 +330,9 @@ PUT は全項目を受け取り上書き（未設定項目は null 可。ただ�
               "ma7": 75.1, "ma7DiffFromLastWeek": -0.4 },
   "bodyFat": { "latest": 18.2, "latestDate": "2026-10-27", "daysSince": 12, "reminder": false,
                "leanBodyMassKg": 61.2, "fatMassKg": 13.6 },
-  "intake": { "kcal": 1520, "proteinG": 112, "fatG": 31, "carbsG": 180 },
-  "goal": { "kcal": 2106, "proteinG": 150, "fatG": 47, "carbsG": 271, "targetWeightKg": 70 }
+  "intake": { "kcal": 1520, "proteinG": 112, "fatG": 31, "carbsG": 180, "count": 9 },
+  "goal": { "id": 1, "startDate": "2026-11-08", "kcal": 2106, "proteinG": 150, "fatG": 47, "carbsG": 271,
+            "targetWeightKg": 70, "targetBodyFatPct": 12, "targetDate": "2027-03-31" }
 }
 ```
 `reminder` は `daysSince >= 14` または一度も測定なしで `true`。

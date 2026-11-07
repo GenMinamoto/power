@@ -7,6 +7,7 @@ import type { Db } from './db.js';
 import { registerErrorHandler } from './errors.js';
 import { bodyLogRoutes } from './routes/bodyLogs.js';
 import { dataRoutes } from './routes/data.js';
+import { mealRoutes } from './routes/meals.js';
 import { statsRoutes } from './routes/stats.js';
 
 export type AppOptions = {
@@ -24,6 +25,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   const backups = new BackupService(opts.db, opts.backupDir);
   bodyLogRoutes(app, opts.db);
   statsRoutes(app, opts.db);
+  mealRoutes(app, opts.db);
   dataRoutes(app, backups);
 
   const serveClient = opts.clientDir != null && existsSync(opts.clientDir);

@@ -137,7 +137,9 @@ test('グラフ：期間切り替えと表示', async ({ page }) => {
   await page.goto('/charts');
   await page.getByRole('button', { name: '全期間' }).click();
   await expect(page.getByRole('button', { name: '全期間' })).toHaveAttribute('aria-pressed', 'true');
+  // 体重・体脂肪率・除脂肪体重・体脂肪量（食事の記録がないのでカロリー・PFC は空表示）
   await expect(page.locator('canvas')).toHaveCount(4);
+  await expect(page.getByText('この期間の食事の記録はまだありません')).toHaveCount(2);
   await page.screenshot({ path: 'test-results/shots/03-charts-all.png', fullPage: true });
 
   // 1週間：体脂肪率の記録がないので空表示

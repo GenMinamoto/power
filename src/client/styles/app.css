@@ -130,3 +130,73 @@ table.data tr.clickable:hover td { background: var(--surface-2); }
 
 .delta-down { color: var(--good); }
 .delta-up { color: var(--text-secondary); }
+
+/* ── 食事 ── */
+h3 { font-size: 0.98rem; margin: 0; }
+.meal-section { border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.meal-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.nutrients { font-variant-numeric: tabular-nums; }
+.nutrients span { margin-left: 6px; }
+.meal-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.meal-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 90px 210px auto; align-items: center; gap: 10px;
+  padding: 6px 4px; border-bottom: 1px dashed var(--border); font-variant-numeric: tabular-nums;
+}
+.meal-row.pending { opacity: 0.55; }
+.meal-row.editing { display: block; border-bottom: 0; padding: 4px 0; }
+.mr-name { overflow-wrap: anywhere; }
+.mr-kcal { text-align: right; font-weight: 600; }
+.mr-kcal .unit { font-weight: 400; font-size: 0.8rem; color: var(--text-secondary); margin-left: 2px; }
+.mr-pfc { display: flex; gap: 10px; color: var(--text-secondary); font-size: 0.88rem; justify-content: flex-end; }
+.mr-pfc span { min-width: 56px; text-align: right; }
+.mr-actions { display: flex; gap: 4px; }
+.small-btn { padding: 3px 8px; font-size: 0.82rem; }
+.mismatch {
+  display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; margin-right: 6px;
+  border-radius: 50%; background: var(--warning-bg); color: var(--warning); font-size: 0.75rem; font-weight: 700; cursor: help;
+}
+
+.meal-form {
+  display: grid; align-items: end; gap: 8px;
+  grid-template-columns: minmax(140px, 1fr) 90px 92px 72px 72px 72px auto;
+}
+.meal-form.editing { background: var(--surface-2); border-radius: 8px; padding: 8px; }
+.mf-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mf-field label { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mf-field input { width: 100%; padding: 6px 8px; }
+.mf-field input[aria-invalid='true'] { border-color: var(--critical); }
+.mf-actions { display: flex; gap: 6px; }
+.mf-errors { grid-column: 1 / -1; }
+
+@media (max-width: 760px) {
+  .meal-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+  .mr-pfc { grid-column: 1; justify-content: flex-start; }
+  .mr-pfc span { min-width: 0; }
+  .mr-actions { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; }
+  .meal-form { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mf-name { grid-column: 1 / span 3; }
+  .mf-amount { grid-column: 4; }
+  .mf-actions { grid-column: 1 / -1; }
+  .mf-actions button { flex: 1; justify-content: center; }
+}
+
+.daily-total { border-top: 2px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+/* ── 摂取量と目標 ── */
+.intake { display: flex; flex-direction: column; gap: 6px; }
+.intake-row { display: grid; grid-template-columns: 120px 160px minmax(60px, 1fr) 48px; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; }
+.intake-label { color: var(--text-secondary); font-size: 0.88rem; }
+.intake-value { white-space: nowrap; }
+.progress { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.progress-fill { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.progress-fill.over { background: var(--warning); }
+.intake-pct { text-align: right; font-size: 0.85rem; color: var(--text-secondary); }
+.intake-pct.over { color: var(--warning); font-weight: 600; }
+@media (max-width: 640px) {
+  .intake-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+  .progress { grid-column: 1; }
+  .intake-pct { grid-column: 2; }
+}
+
+.pfc-table { margin-top: 10px; font-size: 0.88rem; }
+.pfc-table caption { text-align: left; padding-bottom: 4px; }

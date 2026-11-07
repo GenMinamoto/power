@@ -32,7 +32,14 @@ export const LIMITS = {
   weightKg: { min: 20, max: 300 },
   bodyFatPct: { min: 2, max: 70 },
   memoLength: 500,
+  foodNameLength: 100,
+  kcalPerItemMax: 5000,
+  pfcPerItemMax: 500,
+  multiplierMax: 20,
 } as const;
+
+/** 1品のカロリーがこれを超えたら保存前に確認する */
+export const KCAL_PER_ITEM_WARN = 1500;
 
 /** 体重がこれ以上変化したら保存前に確認する（kg） */
 export const WEIGHT_JUMP_WARN_KG = 3;
