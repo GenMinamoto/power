@@ -1,0 +1,75 @@
+:root {
+  color-scheme: light;
+  --bg: #f6f6f4;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --border: #e2e1dc;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #7a7974;
+  --accent: #2a78d6;
+  --accent-text: #ffffff;
+  --grid: #e8e7e2;
+
+  /* グラフの系列色（データ可視化の検証済みパレット） */
+  --series-1: #2a78d6; /* 青：体重・除脂肪体重 */
+  --series-1-soft: #86b6ef;
+  --series-2: #eb6834; /* 橙：体脂肪率・体脂肪量 */
+
+  /* 状態色（お知らせ・エラー専用） */
+  --good: #1f7a3a;
+  --warning: #9a6200;
+  --warning-bg: #fff4dc;
+  --critical: #c22f2f;
+  --critical-bg: #fde8e8;
+
+  --radius: 10px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  --font: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #121211;
+    --surface: #1a1a19;
+    --surface-2: #242422;
+    --border: #33332f;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8f8e86;
+    --accent: #3987e5;
+    --grid: #2b2b28;
+    --series-1: #3987e5;
+    --series-1-soft: #1c5cab;
+    --series-2: #d95926;
+    --good: #5cc27a;
+    --warning: #e0a63a;
+    --warning-bg: #3a2c10;
+    --critical: #ef7d7d;
+    --critical-bg: #3d1a1a;
+    --shadow: none;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #121211;
+  --surface: #1a1a19;
+  --surface-2: #242422;
+  --border: #33332f;
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #8f8e86;
+  --accent: #3987e5;
+  --grid: #2b2b28;
+  --series-1: #3987e5;
+  --series-1-soft: #1c5cab;
+  --series-2: #d95926;
+  --good: #5cc27a;
+  --warning: #e0a63a;
+  --warning-bg: #3a2c10;
+  --critical: #ef7d7d;
+  --critical-bg: #3d1a1a;
+  --shadow: none;
+}
