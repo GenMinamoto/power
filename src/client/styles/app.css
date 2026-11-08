@@ -158,7 +158,7 @@ h3 { font-size: 0.98rem; margin: 0; }
 
 .meal-form {
   display: grid; align-items: end; gap: 8px;
-  grid-template-columns: minmax(140px, 1fr) 90px 92px 72px 72px 72px auto;
+  grid-template-columns: minmax(160px, 1fr) 90px 60px 92px 66px 66px 66px auto;
 }
 .meal-form.editing { background: var(--surface-2); border-radius: 8px; padding: 8px; }
 .mf-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -173,9 +173,15 @@ h3 { font-size: 0.98rem; margin: 0; }
   .mr-pfc { grid-column: 1; justify-content: flex-start; }
   .mr-pfc span { min-width: 0; }
   .mr-actions { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; }
-  .meal-form { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .mf-name { grid-column: 1 / span 3; }
-  .mf-amount { grid-column: 4; }
+  .meal-form { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .mf-name { grid-column: 1 / span 4; }
+  .mf-amount { grid-column: 5 / span 2; }
+  .mf-kcal { grid-column: span 2; }
+  .food-form { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .ff-name { grid-column: 1 / span 4; }
+  .ff-servingNote { grid-column: 5 / span 2; }
+  .ff-kcal { grid-column: span 3; }
+  .ff-proteinG, .ff-fatG, .ff-carbsG { grid-column: span 1; }
   .mf-actions { grid-column: 1 / -1; }
   .mf-actions button { flex: 1; justify-content: center; }
 }
@@ -200,3 +206,64 @@ h3 { font-size: 0.98rem; margin: 0; }
 
 .pfc-table { margin-top: 10px; font-size: 0.88rem; }
 .pfc-table caption { text-align: left; padding-bottom: 4px; }
+
+/* ── マイ食品・候補・コピー ── */
+.combo { position: relative; }
+.suggest {
+  position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: min(560px, 90vw);
+  max-height: 300px; overflow-y: auto; margin: 0; padding: 4px; list-style: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 20px rgb(0 0 0 / 0.15);
+}
+.suggest li { display: flex; justify-content: space-between; gap: 16px; padding: 7px 10px; border-radius: 6px; cursor: pointer; }
+.suggest li.active { background: var(--surface-2); }
+.sg-nut { color: var(--text-secondary); font-size: 0.82rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mf-linked {
+  margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 0.7rem;
+  background: var(--surface-2); color: var(--accent); border: 1px solid var(--border);
+}
+.mf-field input:disabled { background: var(--surface-2); color: var(--text-muted); cursor: not-allowed; }
+.mr-mult { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+
+.copy-panel {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+  background: var(--surface-2); border-radius: 8px; padding: 10px 12px; flex-basis: 100%;
+}
+
+.food-form {
+  display: grid; align-items: end; gap: 8px;
+  grid-template-columns: minmax(160px, 1fr) 130px 92px 72px 72px 72px auto;
+}
+.editing-cell { background: var(--surface-2); text-align: left !important; }
+.foods-table td.actions-cell { white-space: nowrap; }
+.foods-table td.actions-cell button + button { margin-left: 4px; }
+@media (max-width: 760px) {
+  .food-form { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .food-form .mf-actions { grid-column: 1 / -1; }
+  .food-form .mf-actions button { flex: 1; justify-content: center; }
+}
+
+/* スマホ：マイ食品の表をカード状に、食事の行を 2 段に */
+@media (max-width: 640px) {
+  .foods-table thead { display: none; }
+  .foods-table, .foods-table tbody { display: block; }
+  .foods-table tr {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  table.data.foods-table td { border: 0; padding: 0; text-align: left; }
+  .foods-table td.c-name { order: 1; font-weight: 600; }
+  .foods-table td.c-serving { order: 1; }
+  .foods-table td.actions-cell { order: 2; margin-left: auto; }
+  .foods-table tr::before { content: ''; order: 3; flex-basis: 100%; height: 0; }
+  .foods-table td.c-num { order: 4; font-size: 0.88rem; }
+  .foods-table td.c-num::before { content: attr(data-label) ' '; color: var(--text-muted); }
+  .foods-table td.c-use { display: none; }
+  .foods-table td.editing-cell { display: block; width: 100%; }
+  .foods-table tr:has(.editing-cell)::before { display: none; }
+
+  .meal-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .mr-name { grid-column: 1; grid-row: 1; }
+  .mr-actions { grid-column: 2; grid-row: 1; flex-direction: row; }
+  .mr-pfc { grid-column: 1; grid-row: 2; }
+  .mr-kcal { grid-column: 2; grid-row: 2; }
+}

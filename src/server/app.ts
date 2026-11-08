@@ -7,6 +7,7 @@ import type { Db } from './db.js';
 import { registerErrorHandler } from './errors.js';
 import { bodyLogRoutes } from './routes/bodyLogs.js';
 import { dataRoutes } from './routes/data.js';
+import { foodRoutes } from './routes/foods.js';
 import { mealRoutes } from './routes/meals.js';
 import { statsRoutes } from './routes/stats.js';
 
@@ -26,6 +27,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   bodyLogRoutes(app, opts.db);
   statsRoutes(app, opts.db);
   mealRoutes(app, opts.db);
+  foodRoutes(app, opts.db);
   dataRoutes(app, backups);
 
   const serveClient = opts.clientDir != null && existsSync(opts.clientDir);

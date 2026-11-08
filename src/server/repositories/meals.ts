@@ -1,6 +1,6 @@
 import { kcalFromPfc, round, sumNutrients, type Nutrients } from '../../shared/calc.js';
 import { MEAL_TYPES, type MealType } from '../../shared/constants.js';
-import type { MealEntryInput } from '../../shared/schemas.js';
+import type { CopyMealsInput, MealEntryInput } from '../../shared/schemas.js';
 import type { DayMeals, MealEntry } from '../../shared/types.js';
 import { nowIso, transaction, type Db } from '../db.js';
 import { HttpError, notFound } from '../errors.js';
@@ -173,6 +173,46 @@ export class MealRepository {
           id,
         );
       return this.get(id)!;
+    });
+  }
+
+  /**
+   * fromDate の食事を toDate にコピーする（コピー先の既存の行は残し、各区分の末尾に追加）。
+   * 記録時点の値をそのままコピーする。コピーした件数を返す。
+   */
+  copy(input: CopyMealsInput): number {
+    const src = this.listByDate(input.fromDate).filter((e) => input.mealType == null || e.mealType === input.mealType);
+    if (src.length === 0) throw notFound('コピー元の日に食事の記録がありません');
+    return transaction(this.db, () => {
+      const now = nowIso();
+      const insert = this.db.prepare(
+        `INSERT INTO meal_entries
+           (date, meal_type, sort_order, food_name, amount_note, food_id, multiplier,
+            kcal, protein_g, fat_g, carbs_g, memo, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      );
+      const next: Partial<Record<MealType, number>> = {};
+      for (const e of src) {
+        const order = next[e.mealType] ?? this.nextSortOrder(input.toDate, e.mealType);
+        next[e.mealType] = order + 1;
+        insert.run(
+          input.toDate,
+          e.mealType,
+          order,
+          e.foodName,
+          e.amountNote,
+          e.foodId,
+          e.multiplier,
+          e.kcal,
+          e.proteinG,
+          e.fatG,
+          e.carbsG,
+          e.memo,
+          now,
+          now,
+        );
+      }
+      return src.length;
     });
   }
 

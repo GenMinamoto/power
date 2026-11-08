@@ -1,6 +1,7 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router';
 import { today } from '../shared/date';
 import { ChartsPage } from './pages/ChartsPage';
+import { FoodsPage } from './pages/FoodsPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { HomePage } from './pages/HomePage';
 import { RecordPage } from './pages/RecordPage';
@@ -11,18 +12,9 @@ const NAV = [
   { to: '/record', label: '記録', icon: '✏️', end: false },
   { to: '/charts', label: 'グラフ', icon: '📈', end: false },
   { to: '/history', label: '履歴', icon: '📅', end: false },
-  { to: '/foods', label: 'マイ食品', icon: '🍙', end: false, soon: true },
+  { to: '/foods', label: 'マイ食品', icon: '🍙', end: false },
   { to: '/settings', label: '目標・設定', icon: '⚙️', end: false },
 ];
-
-function ComingSoon({ title, phase }: { title: string; phase: number }) {
-  return (
-    <div className="stack">
-      <h1>{title}</h1>
-      <div className="card muted">フェーズ{phase}で追加します。</div>
-    </div>
-  );
-}
 
 export function App() {
   return (
@@ -33,7 +25,6 @@ export function App() {
           <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
             <span aria-hidden>{n.icon}</span>
             {n.label}
-            {n.soon && <span className="soon">準備中</span>}
           </NavLink>
         ))}
       </nav>
@@ -44,7 +35,7 @@ export function App() {
           <Route path="/record/:date" element={<RecordPage />} />
           <Route path="/charts" element={<ChartsPage />} />
           <Route path="/history" element={<HistoryPage />} />
-          <Route path="/foods" element={<ComingSoon title="マイ食品" phase={3} />} />
+          <Route path="/foods" element={<FoodsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

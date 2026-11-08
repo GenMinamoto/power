@@ -4,6 +4,7 @@ import { addDays, formatJaLong, isValidDate, today } from '../../shared/date';
 import { MEAL_TYPES } from '../../shared/constants';
 import { useBodyLog, useMeals } from '../api/hooks';
 import { BodyLogForm } from '../components/BodyLogForm';
+import { CopyMeals } from '../components/CopyMeals';
 import { ErrorNotice } from '../components/Feedback';
 import { IntakeProgress } from '../components/IntakeProgress';
 import { MealSection } from '../components/MealSection';
@@ -72,7 +73,11 @@ function MealsCard({ date }: { date: string }) {
   const d = meals.data;
   return (
     <div className="card stack">
-      <h2>食事</h2>
+      <div className="row">
+        <h2 style={{ margin: 0 }}>食事</h2>
+        <span className="spacer" />
+        <CopyMeals key={date} date={date} />
+      </div>
       <ErrorNotice error={meals.error} />
       {d &&
         MEAL_TYPES.map((t) => (
