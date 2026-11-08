@@ -36,7 +36,17 @@ export const LIMITS = {
   kcalPerItemMax: 5000,
   pfcPerItemMax: 500,
   multiplierMax: 20,
+  heightCm: { min: 100, max: 250 },
+  bmrKcal: { min: 500, max: 5000 },
+  deficitPct: { min: 0, max: 30 },
+  proteinPerKg: { min: 1.0, max: 3.0 },
+  fatPct: { min: 15, max: 40 },
+  goalKcal: { min: 800, max: 6000 },
+  goalCarbsMax: 1000,
 } as const;
+
+/** 体重の 7 日平均の週あたり変化（体重比 %）の目安。これより速く減ると筋肉が落ちやすい */
+export const PACE_GUIDE = { fastPct: -1.0, slowPct: -0.5 } as const;
 
 /** 1品のカロリーがこれを超えたら保存前に確認する */
 export const KCAL_PER_ITEM_WARN = 1500;

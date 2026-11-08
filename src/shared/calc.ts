@@ -77,6 +77,30 @@ export function sumNutrients(items: Nutrients[]): Nutrients {
   return { kcal: Math.round(t.kcal), proteinG: round(t.proteinG, 1), fatG: round(t.fatG, 1), carbsG: round(t.carbsG, 1) };
 }
 
+// ── 減量ペース ─────────────────────────
+
+export type Pace = { from: string; to: string; kgPerWeek: number; pctPerWeek: number; status: 'fast' | 'good' | 'slow' };
+
+/**
+ * 体重の 7 日平均を weeks 週間前と比べた、1 週間あたりの変化。
+ * days は日付順で、末尾が基準日。どちらかの 7 日平均が無ければ null。
+ */
+export function weeklyPace(
+  days: { date: string; weightMa7: number | null }[],
+  weeks = 2,
+  guide: { fastPct: number; slowPct: number } = { fastPct: -1.0, slowPct: -0.5 },
+): Pace | null {
+  const span = weeks * 7;
+  if (days.length <= span) return null;
+  const now = days[days.length - 1]!;
+  const then = days[days.length - 1 - span]!;
+  if (now.weightMa7 == null || then.weightMa7 == null) return null;
+  const kgPerWeek = round((now.weightMa7 - then.weightMa7) / weeks, 2);
+  const pctPerWeek = round(((now.weightMa7 - then.weightMa7) / then.weightMa7 / weeks) * 100, 2);
+  const status = pctPerWeek < guide.fastPct ? 'fast' : pctPerWeek <= guide.slowPct ? 'good' : 'slow';
+  return { from: then.date, to: now.date, kgPerWeek, pctPerWeek, status };
+}
+
 // ── 目安計算 ───────────────────────────
 
 /** Mifflin-St Jeor 式による基礎代謝 */

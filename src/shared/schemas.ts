@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { LIMITS, MEAL_TYPES } from './constants.js';
-import { isValidDate } from './date.js';
+import { ACTIVITY_LEVELS, LIMITS, MEAL_TYPES } from './constants.js';
+import { isValidDate, today } from './date.js';
 
 export const dateSchema = z.string().refine(isValidDate, { message: '日付は YYYY-MM-DD 形式で入力してください' });
 
@@ -73,7 +73,42 @@ export const copyMealsSchema = z
   .refine((v) => v.fromDate !== v.toDate, { message: 'コピー元とコピー先が同じ日です', path: ['fromDate'] });
 export type CopyMealsInput = z.infer<typeof copyMealsSchema>;
 
-export const idParamSchema =z.object({ id: z.coerce.number().int().positive() });
+const optionalRange = (min: number, max: number) => range(min, max).nullable();
+
+export const profileInputSchema = z.object({
+  sex: z.enum(['male', 'female'], { message: '性別を選んでください' }).nullable(),
+  birthDate: dateSchema
+    .refine((d) => d >= '1900-01-01' && d <= today(), { message: '生年月日を確認してください' })
+    .nullable(),
+  heightCm: optionalRange(LIMITS.heightCm.min, LIMITS.heightCm.max),
+  bmrKcal: optionalRange(LIMITS.bmrKcal.min, LIMITS.bmrKcal.max),
+  activityLevel: z
+    .number({ message: '活動レベルを選んでください' })
+    .refine((v) => ACTIVITY_LEVELS.some((a) => a.value === v), { message: '活動レベルを選んでください' }),
+  deficitPct: range(LIMITS.deficitPct.min, LIMITS.deficitPct.max),
+  proteinPerKg: range(LIMITS.proteinPerKg.min, LIMITS.proteinPerKg.max),
+  fatPct: range(LIMITS.fatPct.min, LIMITS.fatPct.max),
+});
+export type ProfileInput = z.infer<typeof profileInputSchema>;
+
+export const goalInputSchema = z
+  .object({
+    startDate: dateSchema,
+    kcal: range(LIMITS.goalKcal.min, LIMITS.goalKcal.max),
+    proteinG: range(0, LIMITS.pfcPerItemMax),
+    fatG: range(0, LIMITS.pfcPerItemMax),
+    carbsG: range(0, LIMITS.goalCarbsMax),
+    targetWeightKg: optionalRange(LIMITS.weightKg.min, LIMITS.weightKg.max),
+    targetBodyFatPct: optionalRange(LIMITS.bodyFatPct.min, LIMITS.bodyFatPct.max),
+    targetDate: dateSchema.nullable(),
+  })
+  .refine((v) => v.targetDate == null || v.targetDate > v.startDate, {
+    message: '目標期日は適用開始日より後の日にしてください',
+    path: ['targetDate'],
+  });
+export type GoalInput = z.infer<typeof goalInputSchema>;
+
+export const idParamSchema = z.object({ id: z.coerce.number().int().positive() });
 
 export const rangeQuerySchema = z.object({
   from: dateSchema.optional(),

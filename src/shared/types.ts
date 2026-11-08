@@ -1,7 +1,7 @@
-import type { Nutrients } from './calc.js';
+import type { Nutrients, Sex } from './calc.js';
 import type { MealType } from './constants.js';
 
-export type { MealType, Nutrients };
+export type { MealType, Nutrients, Sex };
 
 export type BodyLog = {
   date: string;
@@ -66,6 +66,18 @@ export type Goal = {
   targetWeightKg: number | null;
   targetBodyFatPct: number | null;
   targetDate: string | null;
+};
+
+export type Profile = {
+  sex: Sex | null;
+  birthDate: string | null;
+  heightCm: number | null;
+  /** 体組成計などで測った基礎代謝（任意） */
+  bmrKcal: number | null;
+  activityLevel: number;
+  deficitPct: number;
+  proteinPerKg: number;
+  fatPct: number;
 };
 
 export type DayMeals = {

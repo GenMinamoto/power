@@ -1,8 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { kcalFromPfc, round, sumNutrients, type Nutrients } from '../../shared/calc';
 import { MEAL_TYPES, type MealType } from '../../shared/constants';
-import type { BodyLogInput, CopyMealsInput, FoodInput, MealEntryInput } from '../../shared/schemas';
-import type { BackupInfo, BodyLog, BodyLogDetail, DailyStat, Dashboard, DayMeals, Food, MealEntry } from '../../shared/types';
+import type { BodyLogInput, CopyMealsInput, FoodInput, GoalInput, MealEntryInput, ProfileInput } from '../../shared/schemas';
+import type { BackupInfo, BodyLog, BodyLogDetail, DailyStat, Dashboard, DayMeals, Food, Goal, MealEntry, Profile } from '../../shared/types';
 import { api } from './client';
 
 export const keys = {
@@ -13,6 +13,8 @@ export const keys = {
   dashboard: (date: string) => ['dashboard', date] as const,
   statsDaily: ['statsDaily'] as const,
   backups: ['backups'] as const,
+  profile: ['profile'] as const,
+  goals: ['goals'] as const,
 };
 
 export const useBodyLog = (date: string) =>
@@ -212,6 +214,49 @@ export function useDeleteFood() {
     mutationFn: (id: number) => api<void>(`/api/foods/${id}`, { method: 'DELETE' }),
     // 食事記録の food_id が外れるので食事も取り直す
     onSuccess: () => Promise.all([invalidate(), qc.invalidateQueries({ queryKey: ['meals'] })]),
+  });
+}
+
+// ── プロフィール・目標 ───────────────
+
+export const useProfile = () => useQuery({ queryKey: keys.profile, queryFn: () => api<Profile>('/api/profile') });
+
+export function useSaveProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ProfileInput) => api<Profile>('/api/profile', { method: 'PUT', body: input }),
+    onSuccess: (p) => qc.setQueryData(keys.profile, p),
+  });
+}
+
+/** 開始日の新しい順 */
+export const useGoals = () => useQuery({ queryKey: keys.goals, queryFn: () => api<Goal[]>('/api/goals') });
+
+/** 目標が変わると、食事の達成率・ホーム・グラフの目標線が変わる */
+function useInvalidateGoals() {
+  const qc = useQueryClient();
+  return () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: keys.goals }),
+      qc.invalidateQueries({ queryKey: ['meals'] }),
+      qc.invalidateQueries({ queryKey: ['dashboard'] }),
+      qc.invalidateQueries({ queryKey: keys.statsDaily }),
+    ]);
+}
+
+export function useSaveGoal() {
+  const invalidate = useInvalidateGoals();
+  return useMutation({
+    mutationFn: (input: GoalInput) => api<Goal>('/api/goals', { method: 'POST', body: input }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteGoal() {
+  const invalidate = useInvalidateGoals();
+  return useMutation({
+    mutationFn: (id: number) => api<void>(`/api/goals/${id}`, { method: 'DELETE' }),
+    onSuccess: invalidate,
   });
 }
 

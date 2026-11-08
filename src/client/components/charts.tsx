@@ -123,6 +123,19 @@ export function Legend({ items }: { items: LegendItem[] }) {
   );
 }
 
+/**
+ * 目標線は前後の日にも値があれば線になるが、1 日だけ（例：今日から始まる目標）だと見えない。
+ * その日だけ短い横棒の印を描く。
+ */
+function isolatedDash(values: (number | null)[]) {
+  const lone = values.map((v, i) => v != null && values[i - 1] == null && values[i + 1] == null);
+  return {
+    pointStyle: 'line' as const,
+    pointRadius: lone.map((l) => (l ? 8 : 0)),
+    pointBorderWidth: 2,
+  };
+}
+
 /** 体重：日々の値（点＋細線）と 7 日平均（太線）、目標体重（破線） */
 export function WeightChart({ days, height = 260 }: { days: DailyStat[]; height?: number }) {
   const c = useChartColors();
@@ -161,7 +174,7 @@ export function WeightChart({ days, height = 260 }: { days: DailyStat[]; height?
         borderColor: c.muted,
         borderWidth: 1.5,
         borderDash: [6, 4],
-        pointRadius: 0,
+        ...isolatedDash(days.map((d) => d.goalWeightKg)),
         pointHoverRadius: 0,
       });
     }
@@ -291,7 +304,7 @@ export function KcalChart({ days, height = 260 }: { days: DailyStat[]; height?: 
         backgroundColor: c.muted,
         borderWidth: 1.5,
         borderDash: [6, 4],
-        pointRadius: 0,
+        ...isolatedDash(days.map((d) => d.goalKcal)),
         pointHoverRadius: 0,
         stepped: 'middle',
         order: 1,

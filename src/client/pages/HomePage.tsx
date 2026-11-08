@@ -3,6 +3,7 @@ import { addDays, diffDays, formatJa, formatShort, today } from '../../shared/da
 import { useDashboard, useStatsDaily } from '../api/hooks';
 import { SparseLineChart, WeightChart } from '../components/charts';
 import { ErrorNotice, WarningNotice } from '../components/Feedback';
+import { GoalProgress } from '../components/GoalProgress';
 import { IntakeProgress } from '../components/IntakeProgress';
 import type { DailyStat } from '../../shared/types';
 
@@ -98,6 +99,8 @@ export function HomePage() {
           <IntakeProgress intake={d.intake} goal={d.goal} />
         </div>
       )}
+
+      {d && stats.data && <GoalProgress dash={d} days={stats.data} />}
 
       <div className="card chart-card">
         <h2>体重（直近30日）</h2>
