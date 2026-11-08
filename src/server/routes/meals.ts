@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { dateQuerySchema, idParamSchema, mealEntryInputSchema } from '../../shared/schemas.js';
+import { copyMealsSchema, dateQuerySchema, idParamSchema, mealEntryInputSchema } from '../../shared/schemas.js';
 import type { Db } from '../db.js';
 import { notFound } from '../errors.js';
 import { MealRepository } from '../repositories/meals.js';
@@ -16,6 +16,12 @@ export function mealRoutes(app: FastifyInstance, db: Db): void {
   app.post('/api/meals', async (req, reply) => {
     const input = mealEntryInputSchema.parse(req.body);
     return reply.status(201).send(repo.create(input));
+  });
+
+  /** 過去日の食事をコピー（区分指定なしなら全区分） */
+  app.post('/api/meals/copy', async (req) => {
+    const input = copyMealsSchema.parse(req.body);
+    return { copied: repo.copy(input) };
   });
 
   app.put('/api/meals/:id', async (req) => {

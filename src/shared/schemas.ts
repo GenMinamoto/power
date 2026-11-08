@@ -46,7 +46,34 @@ export const mealEntryInputSchema = z.object({
 });
 export type MealEntryInput = z.infer<typeof mealEntryInputSchema>;
 
-export const idParamSchema = z.object({ id: z.coerce.number().int().positive() });
+export const foodInputSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: '食品名を入力してください' })
+    .max(LIMITS.foodNameLength, { message: `${LIMITS.foodNameLength}文字以内で入力してください` }),
+  servingNote: z.string().trim().max(LIMITS.foodNameLength, { message: `${LIMITS.foodNameLength}文字以内で入力してください` }).nullable(),
+  /** null の場合は PFC から計算する */
+  kcal: range(0, LIMITS.kcalPerItemMax).nullable(),
+  proteinG: range(0, LIMITS.pfcPerItemMax),
+  fatG: range(0, LIMITS.pfcPerItemMax),
+  carbsG: range(0, LIMITS.pfcPerItemMax),
+});
+export type FoodInput = z.infer<typeof foodInputSchema>;
+
+export const foodQuerySchema = z.object({ q: z.string().trim().max(100).optional() });
+
+export const copyMealsSchema = z
+  .object({
+    fromDate: dateSchema,
+    toDate: dateSchema,
+    /** null なら全区分 */
+    mealType: z.enum(MEAL_TYPES).nullable(),
+  })
+  .refine((v) => v.fromDate !== v.toDate, { message: 'コピー元とコピー先が同じ日です', path: ['fromDate'] });
+export type CopyMealsInput = z.infer<typeof copyMealsSchema>;
+
+export const idParamSchema =z.object({ id: z.coerce.number().int().positive() });
 
 export const rangeQuerySchema = z.object({
   from: dateSchema.optional(),

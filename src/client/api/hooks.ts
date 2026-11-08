@@ -1,12 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { kcalFromPfc, round, sumNutrients, type Nutrients } from '../../shared/calc';
 import { MEAL_TYPES, type MealType } from '../../shared/constants';
-import type { BodyLogInput, MealEntryInput } from '../../shared/schemas';
-import type { BackupInfo, BodyLog, BodyLogDetail, DailyStat, Dashboard, DayMeals, MealEntry } from '../../shared/types';
+import type { BodyLogInput, CopyMealsInput, FoodInput, MealEntryInput } from '../../shared/schemas';
+import type { BackupInfo, BodyLog, BodyLogDetail, DailyStat, Dashboard, DayMeals, Food, MealEntry } from '../../shared/types';
 import { api } from './client';
 
 export const keys = {
   meals: (date: string) => ['meals', date] as const,
+  foods: (q: string) => ['foods', q] as const,
   bodyLog: (date: string) => ['bodyLog', date] as const,
   bodyLogs: ['bodyLogs'] as const,
   dashboard: (date: string) => ['dashboard', date] as const,
@@ -98,6 +99,8 @@ function useInvalidateMeals() {
       qc.invalidateQueries({ queryKey: ['meals'] }),
       qc.invalidateQueries({ queryKey: ['dashboard'] }),
       qc.invalidateQueries({ queryKey: keys.statsDaily }),
+      // 食品の使用回数（候補の並び順）が変わる
+      qc.invalidateQueries({ queryKey: ['foods'] }),
     ]);
 }
 
@@ -159,6 +162,57 @@ export function useDeleteMeal(date: string) {
     (id: number) => api<void>(`/api/meals/${id}`, { method: 'DELETE' }),
     (day, id) => day.entries.filter((e) => e.id !== id),
   );
+}
+
+export function useCopyMeals() {
+  const invalidate = useInvalidateMeals();
+  return useMutation({
+    mutationFn: (input: CopyMealsInput) => api<{ copied: number }>('/api/meals/copy', { method: 'POST', body: input }),
+    onSuccess: invalidate,
+  });
+}
+
+// ── マイ食品 ─────────────────────────
+
+/** q が空なら全件、あれば部分一致（最大20件） */
+export const useFoods = (q: string, enabled = true) =>
+  useQuery({
+    queryKey: keys.foods(q),
+    queryFn: () => api<Food[]>(`/api/foods${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
+  });
+
+function useInvalidateFoods() {
+  const qc = useQueryClient();
+  return () => qc.invalidateQueries({ queryKey: ['foods'] });
+}
+
+export function useCreateFood() {
+  const invalidate = useInvalidateFoods();
+  return useMutation({
+    mutationFn: (input: FoodInput) => api<Food>('/api/foods', { method: 'POST', body: input }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateFood() {
+  const invalidate = useInvalidateFoods();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: number; input: FoodInput }) => api<Food>(`/api/foods/${id}`, { method: 'PUT', body: input }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteFood() {
+  const invalidate = useInvalidateFoods();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api<void>(`/api/foods/${id}`, { method: 'DELETE' }),
+    // 食事記録の food_id が外れるので食事も取り直す
+    onSuccess: () => Promise.all([invalidate(), qc.invalidateQueries({ queryKey: ['meals'] })]),
+  });
 }
 
 // ── データ管理 ───────────────────────

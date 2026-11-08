@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { kcalFromPfc, kcalMismatch, type Nutrients } from '../../shared/calc';
+import { kcalFromPfc, kcalMismatch, round, type Nutrients } from '../../shared/calc';
 import { MEAL_LABELS, type MealType } from '../../shared/constants';
-import type { MealEntry } from '../../shared/types';
-import { useAddMeal, useDeleteMeal, useUpdateMeal } from '../api/hooks';
+import type { Food, MealEntry } from '../../shared/types';
+import { api } from '../api/client';
+import { useAddMeal, useCreateFood, useDeleteMeal, useUpdateMeal } from '../api/hooks';
 import { fmtG } from '../utils/num';
 import { useFeedback } from './Feedback';
 import { MealEntryForm } from './MealEntryForm';
@@ -20,6 +21,7 @@ function EntryRow({ entry, date }: { entry: MealEntry; date: string }) {
   const [editing, setEditing] = useState(false);
   const update = useUpdateMeal(date);
   const del = useDeleteMeal(date);
+  const createFood = useCreateFood();
   const { toast } = useFeedback();
   const pending = entry.id < 0; // 保存中（楽観的に表示している行）
 
@@ -44,11 +46,30 @@ function EntryRow({ entry, date }: { entry: MealEntry; date: string }) {
 
   const mismatch = kcalMismatch(entry.kcal, entry.proteinG, entry.fatG, entry.carbsG);
 
+  /** 記録した内容をマイ食品に登録（倍率があれば 1 倍の値に割り戻す） */
+  async function registerFood() {
+    const same = await api<Food[]>(`/api/foods?q=${encodeURIComponent(entry.foodName)}`);
+    if (same.some((s) => s.name === entry.foodName)) {
+      if (!window.confirm(`「${entry.foodName}」はマイ食品に登録済みです。別の食品として追加で登録しますか？`)) return;
+    }
+    const m = entry.multiplier && entry.multiplier > 0 ? entry.multiplier : 1;
+    await createFood.mutateAsync({
+      name: entry.foodName,
+      servingNote: entry.amountNote,
+      kcal: Math.round(entry.kcal / m),
+      proteinG: round(entry.proteinG / m, 1),
+      fatG: round(entry.fatG / m, 1),
+      carbsG: round(entry.carbsG / m, 1),
+    });
+    toast(`「${entry.foodName}」をマイ食品に登録しました`);
+  }
+
   return (
     <li className={`meal-row${pending ? ' pending' : ''}`}>
       <span className="mr-name">
         {entry.foodName}
         {entry.amountNote && <span className="muted"> {entry.amountNote}</span>}
+        {entry.multiplier != null && entry.multiplier !== 1 && <span className="mr-mult"> ×{entry.multiplier}</span>}
       </span>
       <span className="mr-kcal">
         {mismatch && (
@@ -69,6 +90,18 @@ function EntryRow({ entry, date }: { entry: MealEntry; date: string }) {
         <span>C {fmtG(entry.carbsG)}</span>
       </span>
       <span className="mr-actions">
+        {entry.foodId == null && (
+          <button
+            type="button"
+            className="small-btn"
+            disabled={pending || createFood.isPending}
+            title="この内容をマイ食品に登録"
+            aria-label={`${entry.foodName}をマイ食品に登録`}
+            onClick={registerFood}
+          >
+            ☆
+          </button>
+        )}
         <button type="button" className="small-btn" onClick={() => setEditing(true)} disabled={pending} aria-label={`${entry.foodName}を編集`}>
           編集
         </button>

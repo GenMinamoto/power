@@ -45,6 +45,17 @@ export type MealEntry = {
   memo: string | null;
 };
 
+export type Food = {
+  id: number;
+  name: string;
+  servingNote: string | null;
+  kcal: number;
+  proteinG: number;
+  fatG: number;
+  carbsG: number;
+  useCount: number;
+};
+
 export type Goal = {
   id: number;
   startDate: string;
