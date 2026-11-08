@@ -155,7 +155,10 @@ test('グラフ：期間切り替えと表示', async ({ page }) => {
 test('履歴：月ごとの一覧とクリックで記録画面へ', async ({ page }) => {
   await page.goto('/history');
   await page.getByLabel('月を選ぶ').selectOption('2026-10');
-  const rows = page.locator('table.data tbody tr');
+  // 記録のない日も「未入力」として並ぶ（10月は 31 日分）
+  await expect(page.locator('table.data tbody tr')).toHaveCount(31);
+  await expect(page.locator('table.data tbody tr.empty-day').first()).toContainText('未入力');
+  const rows = page.locator('table.data tbody tr:not(.empty-day)');
   await expect(rows).toHaveCount(2);
   await expect(rows.first()).toContainText('61.5');
   await rows.first().click();

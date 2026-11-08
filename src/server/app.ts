@@ -30,7 +30,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   mealRoutes(app, opts.db);
   foodRoutes(app, opts.db);
   goalRoutes(app, opts.db);
-  dataRoutes(app, backups);
+  dataRoutes(app, opts.db, backups);
 
   const serveClient = opts.clientDir != null && existsSync(opts.clientDir);
   if (serveClient) {

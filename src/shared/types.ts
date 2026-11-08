@@ -108,6 +108,23 @@ export type DailyStat = {
   goalWeightKg: number | null;
 };
 
+/** 月曜始まりの週ごとの平均。平均は記録のある日だけで計算する */
+export type WeeklyStat = {
+  weekStart: string;
+  avgWeightKg: number | null;
+  avgBodyFatPct: number | null;
+  avgKcal: number | null;
+  avgProteinG: number | null;
+  avgFatG: number | null;
+  avgCarbsG: number | null;
+  /** 体重を記録した日数 */
+  weightDays: number;
+  /** 食事を記録した日数 */
+  mealDays: number;
+  /** 前週の平均体重との差 */
+  diffWeightKg: number | null;
+};
+
 export type Dashboard = {
   date: string;
   weight: {

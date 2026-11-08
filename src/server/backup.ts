@@ -5,7 +5,7 @@ import type { BackupInfo } from '../shared/types.js';
 import type { Db } from './db.js';
 
 const DAILY_RE = /^power-\d{8}(-\d+)?\.db$/;
-const PRE_IMPORT_RE = /^power-\d{8}-\d{6}-pre-import\.db$/;
+const PRE_IMPORT_RE = /^power-\d{8}-\d{6}(-\d+)?-pre-import\.db$/;
 
 function ymd(now: Date): string {
   return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
@@ -50,7 +50,9 @@ export class BackupService {
   /** インポート直前のバックアップ */
   createPreImport(now = new Date()): string {
     mkdirSync(this.dir, { recursive: true });
-    const file = `power-${ymd(now)}-${hms(now)}-pre-import.db`;
+    const base = `power-${ymd(now)}-${hms(now)}`;
+    let file = `${base}-pre-import.db`;
+    for (let i = 2; existsSync(join(this.dir, file)); i++) file = `${base}-${i}-pre-import.db`;
     vacuumInto(this.db, join(this.dir, file));
     this.rotate();
     return file;

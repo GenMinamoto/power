@@ -5,6 +5,7 @@ import { useStatsDaily } from '../api/hooks';
 import { KcalChart, PfcChart, SparseLineChart, WeightChart } from '../components/charts';
 import { ErrorNotice } from '../components/Feedback';
 import { filterRange, RangeSelector, type RangeKey } from '../components/RangeSelector';
+import { WeeklySummary } from '../components/WeeklySummary';
 
 const pickFat = (d: DailyStat) => d.bodyFatPct;
 const pickLbm = (d: DailyStat) => d.leanBodyMassKg;
@@ -85,6 +86,11 @@ export function ChartsPage() {
           1日ごとの P・F・C をカロリー換算で積み上げています
         </p>
         <PfcChart days={days} />
+      </div>
+
+      <div className="card">
+        <h2>週ごとのまとめ</h2>
+        <WeeklySummary days={stats.data ?? []} from={days[0]?.date ?? null} />
       </div>
     </div>
   );
