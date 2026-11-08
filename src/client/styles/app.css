@@ -267,3 +267,67 @@ h3 { font-size: 0.98rem; margin: 0; }
   .mr-pfc { grid-column: 1; grid-row: 2; }
   .mr-kcal { grid-column: 2; grid-row: 2; }
 }
+
+/* ── 目標・設定 ── */
+.pf-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 16px; align-items: start; }
+.pf-field, .gf-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pf-field label, .gf-field label { font-size: 0.82rem; color: var(--text-secondary); }
+.pf-field input[type='text'], .gf-field input[type='text'] { width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+.pf-field .input-unit, .gf-field .input-unit { flex-wrap: nowrap; }
+.pf-field select { width: 100%; }
+.pf-field input[aria-invalid='true'], .gf-field input[aria-invalid='true'] { border-color: var(--critical); }
+.pf-wide { grid-column: span 2; }
+.pf-hint { font-size: 0.75rem; color: var(--text-muted); }
+.plan-result { background: var(--surface-2); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.plan-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-variant-numeric: tabular-nums; }
+.plan-steps li { display: grid; grid-template-columns: 110px 110px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.ps-label { color: var(--text-secondary); font-size: 0.88rem; }
+.plan-steps strong { text-align: right; }
+.ps-how { color: var(--text-muted); font-size: 0.82rem; overflow-wrap: anywhere; }
+table.data.plan-pfc td, table.data.plan-pfc th { padding: 5px 8px; }
+table.data.plan-pfc { background: var(--surface); border-radius: 6px; }
+table.data.plan-pfc td.ps-how-col, table.data.plan-pfc th.ps-how-col { text-align: left; color: var(--text-muted); font-size: 0.82rem; }
+.gf-grid { display: grid; grid-template-columns: 170px repeat(4, minmax(0, 1fr)); gap: 12px 16px; }
+.gf-grid + .gf-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 640px; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.75rem; background: var(--surface-2); color: var(--text-secondary); }
+.badge-current { color: var(--accent); border: 1px solid var(--accent); font-weight: 600; }
+.goals-table td.actions-cell { white-space: nowrap; }
+.goals-table td.actions-cell button + button { margin-left: 4px; }
+.goals-table td { white-space: nowrap; }
+
+.goal-rows { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.goal-row { display: flex; flex-direction: column; gap: 2px; }
+.goal-value { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pace { display: flex; flex-direction: column; gap: 2px; border-top: 1px solid var(--border); padding-top: 12px; }
+.pace-value { font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pace-badge { font-size: 0.8rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); }
+.pace-good .pace-badge { color: var(--good); }
+.pace-fast .pace-badge { color: var(--warning); background: var(--warning-bg); }
+.pace-slow .pace-badge { color: var(--text-secondary); }
+
+@media (max-width: 760px) {
+  .pf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gf-grid, .gf-grid + .gf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gf-startDate { grid-column: 1 / -1; }
+  .goal-rows { grid-template-columns: minmax(0, 1fr); }
+  .plan-steps li { grid-template-columns: 96px auto; }
+  .ps-how { grid-column: 1 / -1; }
+  .ps-how-col { display: none; }
+}
+/* スマホ：目標の履歴をカード状に */
+@media (max-width: 640px) {
+  .goals-table thead { display: none; }
+  .goals-table, .goals-table tbody { display: block; }
+  .goals-table tr {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  table.data.goals-table td { border: 0; padding: 0; text-align: left; white-space: normal; }
+  .goals-table td.c-start { order: 1; font-weight: 600; }
+  .goals-table td.c-state { order: 1; }
+  .goals-table td.actions-cell { order: 2; margin-left: auto; white-space: nowrap; }
+  .goals-table tr::before { content: ''; order: 3; flex-basis: 100%; height: 0; }
+  .goals-table td.c-kcal, .goals-table td.c-pfc { order: 4; font-size: 0.88rem; }
+  .goals-table td.c-kcal::before, .goals-table td.c-pfc::before { content: attr(data-label) ' '; color: var(--text-muted); }
+  .goals-table td.c-body { order: 5; font-size: 0.88rem; flex-basis: 100%; }
+}

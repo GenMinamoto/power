@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import type { Nutrients } from '../../shared/calc';
 import type { Goal } from '../../shared/types';
 import { fmtG } from '../utils/num';
@@ -44,7 +45,11 @@ export function IntakeProgress({ intake, goal }: { intake: Nutrients; goal: Goal
           </div>
         );
       })}
-      {!goal && <p className="small muted" style={{ margin: '4px 0 0' }}>目標を設定すると達成率が表示されます（目標設定はフェーズ4で追加）。</p>}
+      {!goal && (
+        <p className="small muted" style={{ margin: '4px 0 0' }}>
+          <Link to="/settings">目標・設定</Link> で目標を設定すると達成率が表示されます。
+        </p>
+      )}
     </div>
   );
 }

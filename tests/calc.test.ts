@@ -9,6 +9,7 @@ import {
   movingAverage,
   sumNutrients,
   targetPlan,
+  weeklyPace,
   type PlanInput,
 } from '../src/shared/calc';
 
@@ -131,5 +132,30 @@ describe('目安計算', () => {
     const r = targetPlan({ ...base, bmrKcal: 900, activityLevel: 1.2, proteinPerKg: 3.0, fatPct: 40 });
     expect(r.warnings).toContain('CARBS_NEGATIVE');
     expect(r.ok && r.carbsG).toBe(0);
+  });
+});
+
+describe('weeklyPace（7日平均の2週間の変化）', () => {
+  const series = (start: number, perDay: number, n = 15) =>
+    Array.from({ length: n }, (_, i): { date: string; weightMa7: number | null } => ({
+      date: `d${i}`,
+      weightMa7: round2(start + perDay * i),
+    }));
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+
+  it('週 0.5〜1% 減は good', () => {
+    // 80kg → 2週間で −1.2kg → 週 −0.6kg（−0.75%）
+    expect(weeklyPace(series(80, -1.2 / 14))).toMatchObject({ kgPerWeek: -0.6, pctPerWeek: -0.75, status: 'good' });
+  });
+  it('週 1% を超えて減ると fast、0.5% 未満は slow（増加も slow）', () => {
+    expect(weeklyPace(series(80, -2.0 / 14))?.status).toBe('fast');
+    expect(weeklyPace(series(80, -0.4 / 14))?.status).toBe('slow');
+    expect(weeklyPace(series(80, 0.3 / 14))?.status).toBe('slow');
+  });
+  it('どちらかの7日平均が無い、または日数が足りなければ null', () => {
+    const s = series(80, -0.1);
+    s[0] = { ...s[0]!, weightMa7: null };
+    expect(weeklyPace(s)).toBeNull();
+    expect(weeklyPace(series(80, -0.1, 14))).toBeNull();
   });
 });
