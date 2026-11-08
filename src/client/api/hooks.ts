@@ -269,3 +269,17 @@ export function useCreateBackup() {
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.backups }),
   });
 }
+
+export type ImportResult = {
+  imported: { bodyLogs: number; foods: number; mealEntries: number; goals: number };
+  backupFile: string;
+};
+
+/** 全データの読み込み。成功したらすべての画面データを取り直す */
+export function useImportData() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: unknown) => api<ImportResult>('/api/import', { method: 'POST', body: data }),
+    onSuccess: () => qc.resetQueries(),
+  });
+}

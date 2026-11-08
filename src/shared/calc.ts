@@ -1,4 +1,6 @@
 import { MA_MIN_POINTS, MA_WINDOW } from './constants.js';
+import { addDays, weekStart } from './date.js';
+import type { WeeklyStat } from './types.js';
 
 export type Nutrients = { kcal: number; proteinG: number; fatG: number; carbsG: number };
 export type Sex = 'male' | 'female';
@@ -99,6 +101,77 @@ export function weeklyPace(
   const pctPerWeek = round(((now.weightMa7 - then.weightMa7) / then.weightMa7 / weeks) * 100, 2);
   const status = pctPerWeek < guide.fastPct ? 'fast' : pctPerWeek <= guide.slowPct ? 'good' : 'slow';
   return { from: then.date, to: now.date, kgPerWeek, pctPerWeek, status };
+}
+
+// ── 週次サマリー ───────────────────────
+
+type DayForWeek = {
+  date: string;
+  weightKg: number | null;
+  bodyFatPct: number | null;
+  kcal: number | null;
+  proteinG: number | null;
+  fatG: number | null;
+  carbsG: number | null;
+};
+
+const avg = (xs: (number | null)[], digits: number): number | null => {
+  const v = xs.filter((x): x is number => x != null);
+  return v.length ? round(v.reduce((a, b) => a + b, 0) / v.length, digits) : null;
+};
+
+/**
+ * 日別の値を月曜始まりの週にまとめる（古い順）。平均は記録のある日だけで計算する。
+ * days は日付順であること。記録が 1 日もない週も、前後に記録があれば行を作る。
+ */
+export function weeklySummary(days: DayForWeek[]): WeeklyStat[] {
+  const groups = new Map<string, DayForWeek[]>();
+  for (const d of days) {
+    const w = weekStart(d.date);
+    const g = groups.get(w);
+    if (g) g.push(d);
+    else groups.set(w, [d]);
+  }
+  const out: WeeklyStat[] = [];
+  for (const [w, ds] of groups) {
+    const meals = ds.filter((d) => d.kcal != null);
+    const avgWeightKg = avg(
+      ds.map((d) => d.weightKg),
+      1,
+    );
+    const prev = out.at(-1);
+    out.push({
+      weekStart: w,
+      avgWeightKg,
+      avgBodyFatPct: avg(
+        ds.map((d) => d.bodyFatPct),
+        1,
+      ),
+      avgKcal: avg(
+        meals.map((d) => d.kcal),
+        0,
+      ),
+      avgProteinG: avg(
+        meals.map((d) => d.proteinG),
+        1,
+      ),
+      avgFatG: avg(
+        meals.map((d) => d.fatG),
+        1,
+      ),
+      avgCarbsG: avg(
+        meals.map((d) => d.carbsG),
+        1,
+      ),
+      weightDays: ds.filter((d) => d.weightKg != null).length,
+      mealDays: meals.length,
+      diffWeightKg:
+        prev && prev.weekStart === addDays(w, -7) && prev.avgWeightKg != null && avgWeightKg != null
+          ? round(avgWeightKg - prev.avgWeightKg, 1)
+          : null,
+    });
+  }
+  return out;
 }
 
 // ── 目安計算 ───────────────────────────
