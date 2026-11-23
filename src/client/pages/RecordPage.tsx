@@ -2,12 +2,13 @@ import { useEffect } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { addDays, formatJaLong, isValidDate, today } from '../../shared/date';
 import { MEAL_TYPES } from '../../shared/constants';
-import { useBodyLog, useMeals } from '../api/hooks';
+import { useBodyLog, useMeals, useWorkouts } from '../api/hooks';
 import { BodyLogForm } from '../components/BodyLogForm';
 import { CopyMeals } from '../components/CopyMeals';
 import { ErrorNotice } from '../components/Feedback';
-import { IntakeProgress } from '../components/IntakeProgress';
+import { IntakeProgress, withBonus } from '../components/IntakeProgress';
 import { MealSection } from '../components/MealSection';
+import { BonusNote, WorkoutCard } from '../components/WorkoutCard';
 
 export function RecordPage() {
   const { date } = useParams();
@@ -64,13 +65,17 @@ function RecordContent({ date }: { date: string }) {
       {body.data && <BodyLogForm date={date} detail={body.data} />}
 
       <MealsCard date={date} />
+
+      <WorkoutCard date={date} />
     </div>
   );
 }
 
 function MealsCard({ date }: { date: string }) {
   const meals = useMeals(date);
+  const workouts = useWorkouts(date);
   const d = meals.data;
+  const bonus = workouts.data?.bonus;
   return (
     <div className="card stack">
       <div className="row">
@@ -86,7 +91,8 @@ function MealsCard({ date }: { date: string }) {
       {d && (
         <div className="daily-total">
           <h3>1日合計</h3>
-          <IntakeProgress intake={d.total} goal={d.goal} />
+          <IntakeProgress intake={d.total} goal={withBonus(d.goal, bonus)} />
+          {d.goal && bonus && <BonusNote bonus={bonus} />}
         </div>
       )}
     </div>

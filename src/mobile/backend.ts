@@ -5,6 +5,7 @@ import { foodRoutes } from '../server/routes/foods.js';
 import { goalRoutes } from '../server/routes/goals.js';
 import { mealRoutes } from '../server/routes/meals.js';
 import { statsRoutes } from '../server/routes/stats.js';
+import { workoutRoutes } from '../server/routes/workouts.js';
 import { exportSchema, TransferService } from '../server/transfer.js';
 import { z } from 'zod';
 import { MobileBackups } from './backups.js';
@@ -40,6 +41,7 @@ export class MobileBackend {
     mealRoutes(app, db);
     foodRoutes(app, db);
     goalRoutes(app, db);
+    workoutRoutes(app, db);
     dataRoutes(router, db, backups);
 
     const backend = new MobileBackend(db, storage, backups, router);

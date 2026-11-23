@@ -11,6 +11,7 @@ import { foodRoutes } from './routes/foods.js';
 import { goalRoutes } from './routes/goals.js';
 import { mealRoutes } from './routes/meals.js';
 import { statsRoutes } from './routes/stats.js';
+import { workoutRoutes } from './routes/workouts.js';
 
 export type AppOptions = {
   db: Db;
@@ -30,6 +31,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   mealRoutes(app, opts.db);
   foodRoutes(app, opts.db);
   goalRoutes(app, opts.db);
+  workoutRoutes(app, opts.db);
   dataRoutes(app, opts.db, backups);
 
   const serveClient = opts.clientDir != null && existsSync(opts.clientDir);

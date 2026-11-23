@@ -5,8 +5,9 @@ import { SparseLineChart, WeightChart } from '../components/charts';
 import { ExportReminder } from '../components/DataManagement';
 import { ErrorNotice, WarningNotice } from '../components/Feedback';
 import { GoalProgress } from '../components/GoalProgress';
-import { IntakeProgress } from '../components/IntakeProgress';
-import type { DailyStat } from '../../shared/types';
+import { IntakeProgress, withBonus } from '../components/IntakeProgress';
+import { BonusNote } from '../components/WorkoutCard';
+import type { DailyStat, Dashboard } from '../../shared/types';
 
 const pickLbm = (d: DailyStat) => d.leanBodyMassKg;
 const pickFatMass = (d: DailyStat) => d.fatMassKg;
@@ -98,7 +99,9 @@ export function HomePage() {
             <h2 style={{ margin: 0 }}>今日の摂取</h2>
             <span className="small muted">{d.intake.count}品</span>
           </div>
-          <IntakeProgress intake={d.intake} goal={d.goal} />
+          <IntakeProgress intake={d.intake} goal={withBonus(d.goal, d.bonus)} />
+          {d.goal && <BonusNote bonus={d.bonus} />}
+          <EnergyBalance dash={d} />
         </div>
       )}
 
@@ -138,6 +141,45 @@ export function HomePage() {
             emptyText="体重と体脂肪率を同じ日に記録すると表示されます"
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** 今日の消費の目安と、摂取との差 */
+function EnergyBalance({ dash }: { dash: Dashboard }) {
+  const e = dash.energy;
+  if (!e) {
+    return (
+      <p className="small muted" style={{ margin: '8px 0 0' }}>
+        <Link to="/settings">目標・設定</Link> で性別・生年月日・身長を入れると、1日の消費の目安と収支が表示されます。
+      </p>
+    );
+  }
+  const balance = dash.intake.kcal - e.totalKcal;
+  return (
+    <div className="energy">
+      <div className="energy-row">
+        <span className="intake-label">消費（目安）</span>
+        <span>
+          <strong>{e.totalKcal.toLocaleString()}</strong> kcal
+          <span className="small muted">
+            {' '}
+            ＝ 基礎代謝 {e.bmr.toLocaleString()} × {e.activityLevel}
+            {e.workoutKcal > 0 ? ` ＋ 運動 ${e.workoutKcal.toLocaleString()}` : ''}
+          </span>
+        </span>
+      </div>
+      <div className="energy-row">
+        <span className="intake-label">収支</span>
+        <span className={balance > 0 ? 'over-text' : undefined}>
+          <strong>
+            {balance > 0 ? '+' : ''}
+            {balance.toLocaleString()}
+          </strong>{' '}
+          kcal
+          <span className="small muted">{dash.intake.count === 0 ? '（食事の記録なし）' : balance <= 0 ? '（消費が上回っています）' : '（摂取が上回っています）'}</span>
+        </span>
       </div>
     </div>
   );

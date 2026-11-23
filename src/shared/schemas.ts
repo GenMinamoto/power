@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ACTIVITY_LEVELS, LIMITS, MEAL_TYPES } from './constants.js';
+import { ACTIVITY_LEVELS, LIMITS, MEAL_TYPES, WORKOUT_KINDS } from './constants.js';
 import { isValidDate, today } from './date.js';
 
 export const dateSchema = z.string().refine(isValidDate, { message: '日付は YYYY-MM-DD 形式で入力してください' });
@@ -107,6 +107,33 @@ export const goalInputSchema = z
     path: ['targetDate'],
   });
 export type GoalInput = z.infer<typeof goalInputSchema>;
+
+export const workoutInputSchema = z.object({
+  date: dateSchema,
+  kind: z.enum(WORKOUT_KINDS, { message: '種目を選んでください' }),
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: '名前を入力してください' })
+    .max(LIMITS.foodNameLength, { message: `${LIMITS.foodNameLength}文字以内で入力してください` }),
+  durationMin: range(LIMITS.durationMin.min, LIMITS.durationMin.max).nullable(),
+  distanceKm: range(LIMITS.distanceKm.min, LIMITS.distanceKm.max).nullable(),
+  /** null の場合は体重・時間・距離から目安を計算する */
+  kcal: range(0, LIMITS.workoutKcalMax).nullable(),
+  memo: z.string().max(LIMITS.memoLength, { message: `${LIMITS.memoLength}文字以内で入力してください` }).nullable(),
+});
+export type WorkoutInput = z.infer<typeof workoutInputSchema>;
+
+/** ヘルスケア（ショートカット）からの取り込み。同じ日・種目・名前の取り込み済みの記録は上書きする */
+export const healthWorkoutInputSchema = z.object({
+  date: dateSchema,
+  kind: z.enum(WORKOUT_KINDS, { message: '種目が正しくありません' }),
+  name: z.string().trim().min(1).max(LIMITS.foodNameLength),
+  durationMin: range(LIMITS.durationMin.min, LIMITS.durationMin.max).nullable(),
+  distanceKm: range(LIMITS.distanceKm.min, LIMITS.distanceKm.max).nullable(),
+  kcal: range(0, LIMITS.workoutKcalMax),
+});
+export type HealthWorkoutInput = z.infer<typeof healthWorkoutInputSchema>;
 
 export const idParamSchema = z.object({ id: z.coerce.number().int().positive() });
 

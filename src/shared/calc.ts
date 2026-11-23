@@ -1,4 +1,4 @@
-import { MA_MIN_POINTS, MA_WINDOW } from './constants.js';
+import { MA_MIN_POINTS, MA_WINDOW, WORKOUT_ESTIMATE, type WorkoutKind } from './constants.js';
 import { addDays, weekStart } from './date.js';
 import type { WeeklyStat } from './types.js';
 
@@ -235,4 +235,32 @@ export function targetPlan(input: PlanInput): PlanResult {
     carbsG = 0;
   }
   return { ok: true, bmr, bmrSource, tdee, targetKcal, proteinG, fatG, carbsG, warnings };
+}
+
+// ── 運動 ───────────────────────────────
+
+/**
+ * 運動の消費カロリーの目安。距離があれば距離から、なければ時間から計算する。
+ * 計算できない（体重がない、種目に必要な値がない）ときは null
+ */
+export function estimateWorkoutKcal(
+  kind: WorkoutKind,
+  weightKg: number | null,
+  durationMin: number | null,
+  distanceKm: number | null,
+): number | null {
+  if (weightKg == null) return null;
+  const e = WORKOUT_ESTIMATE[kind];
+  if (e.perKgKm != null && distanceKm != null) return Math.round(weightKg * distanceKm * e.perKgKm);
+  if (e.met != null && durationMin != null) return Math.round((e.met - 1) * weightKg * (durationMin / 60));
+  return null;
+}
+
+/**
+ * 運動した日に「食べてよい量」に足す分。
+ * 運動の消費にも減量ペース（例：−20%）を当てはめ、残りを炭水化物として足す
+ */
+export function workoutBonus(workoutKcal: number, deficitPct: number): { kcal: number; carbsG: number } {
+  const kcal = Math.round(workoutKcal * (1 - deficitPct / 100));
+  return { kcal, carbsG: Math.round(kcal / 4) };
 }

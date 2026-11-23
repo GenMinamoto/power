@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import type { Nutrients } from '../../shared/calc';
-import type { Goal } from '../../shared/types';
+import type { Goal, WorkoutBonus } from '../../shared/types';
 import { fmtG } from '../utils/num';
 
 const ROWS = [
@@ -9,6 +9,12 @@ const ROWS = [
   { key: 'fatG', label: 'F（脂質）', unit: 'g' },
   { key: 'carbsG', label: 'C（炭水化物）', unit: 'g' },
 ] as const;
+
+/** 運動した日は、目標のカロリー・炭水化物に上乗せする */
+export function withBonus(goal: Goal | null, bonus: WorkoutBonus | undefined): Goal | null {
+  if (!goal || !bonus || bonus.bonusKcal === 0) return goal;
+  return { ...goal, kcal: goal.kcal + bonus.bonusKcal, carbsG: goal.carbsG + bonus.bonusCarbsG };
+}
 
 /** 摂取量と目標の比較。目標が未設定なら摂取量だけを表示する */
 export function IntakeProgress({ intake, goal }: { intake: Nutrients; goal: Goal | null }) {

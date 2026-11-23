@@ -143,7 +143,7 @@ describe('エクスポート / インポート', () => {
     const r = await importJson(data);
     expect(r.statusCode).toBe(200);
     const result = r.json<ImportResult>();
-    expect(result.imported).toEqual({ bodyLogs: 2, foods: 1, mealEntries: 2, goals: 1 });
+    expect(result.imported).toEqual({ bodyLogs: 2, foods: 1, mealEntries: 2, goals: 1, workouts: 0 });
     expect(result.backupFile).toMatch(/-pre-import\.db$/);
     expect(readdirSync(backupDir)).toContain(result.backupFile);
 

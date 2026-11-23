@@ -1,7 +1,7 @@
 import type { Nutrients, Sex } from './calc.js';
-import type { MealType } from './constants.js';
+import type { MealType, WorkoutKind } from './constants.js';
 
-export type { MealType, Nutrients, Sex };
+export type { MealType, Nutrients, Sex, WorkoutKind };
 
 export type BodyLog = {
   date: string;
@@ -43,6 +43,37 @@ export type MealEntry = {
   fatG: number;
   carbsG: number;
   memo: string | null;
+};
+
+export type Workout = {
+  id: number;
+  date: string;
+  kind: WorkoutKind;
+  name: string;
+  durationMin: number | null;
+  distanceKm: number | null;
+  kcal: number;
+  /** manual：手入力、health：ヘルスケア（ショートカット）から取り込み */
+  source: 'manual' | 'health';
+  memo: string | null;
+};
+
+/** 運動による「食べてよい量」の上乗せ */
+export type WorkoutBonus = {
+  /** その日の運動の消費合計 */
+  workoutKcal: number;
+  /** 目標カロリーに足す分（減量ペースを当てはめた後） */
+  bonusKcal: number;
+  /** 目標の炭水化物に足す分 */
+  bonusCarbsG: number;
+  /** 当てはめた減量ペース（%） */
+  deficitPct: number;
+};
+
+export type DayWorkouts = {
+  date: string;
+  entries: Workout[];
+  bonus: WorkoutBonus;
 };
 
 export type Food = {
@@ -101,9 +132,13 @@ export type DailyStat = {
   fatG: number | null;
   carbsG: number | null;
   mealCount: number;
+  /** その日の運動の消費合計（記録がなければ null） */
+  workoutKcal: number | null;
+  /** 目標カロリー（運動した日は上乗せ分を含む） */
   goalKcal: number | null;
   goalProteinG: number | null;
   goalFatG: number | null;
+  /** 目標の炭水化物（運動した日は上乗せ分を含む） */
   goalCarbsG: number | null;
   goalWeightKg: number | null;
 };
@@ -145,6 +180,10 @@ export type Dashboard = {
   /** その日の摂取合計（食事の記録がなければ 0） */
   intake: Nutrients & { count: number };
   goal: Goal | null;
+  /** 運動による上乗せ */
+  bonus: WorkoutBonus;
+  /** 1 日の消費の目安（基礎代謝 × 活動レベル ＋ 運動）。プロフィールが足りなければ null */
+  energy: { bmr: number; activityLevel: number; baseKcal: number; workoutKcal: number; totalKcal: number } | null;
 };
 
 export type BackupInfo = { file: string; createdAt: string; sizeBytes: number };

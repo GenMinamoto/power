@@ -1,11 +1,13 @@
 import { BODY_FAT_REMINDER_DAYS, MA_WINDOW } from '../../shared/constants.js';
-import { movingAverage, round } from '../../shared/calc.js';
-import { addDays, diffDays, rangeDays } from '../../shared/date.js';
+import { bmrMifflin, movingAverage, round, workoutBonus } from '../../shared/calc.js';
+import { addDays, ageOn, diffDays, rangeDays } from '../../shared/date.js';
 import type { Dashboard, DailyStat } from '../../shared/types.js';
 import type { SqlDb as Db } from '../dbCore.js';
 import { BodyLogRepository } from './bodyLogs.js';
 import { GoalRepository } from './goals.js';
 import { MealRepository } from './meals.js';
+import { ProfileRepository } from './profile.js';
+import { WorkoutRepository } from './workouts.js';
 
 type GoalRow = {
   start_date: string;
@@ -20,17 +22,24 @@ export class StatsRepository {
   private bodyLogs: BodyLogRepository;
   private meals: MealRepository;
   private goals: GoalRepository;
+  private workouts: WorkoutRepository;
+  private profile: ProfileRepository;
 
   constructor(private db: Db) {
     this.bodyLogs = new BodyLogRepository(db);
     this.meals = new MealRepository(db);
     this.goals = new GoalRepository(db);
+    this.workouts = new WorkoutRepository(db);
+    this.profile = new ProfileRepository(db);
   }
 
-  /** 最初の記録日（体組成・食事のうち早い方）。記録がなければ null */
+  /** 最初の記録日（体組成・食事・運動のうち最も早い日）。記録がなければ null */
   firstRecordDate(): string | null {
     const r = this.db
-      .prepare('SELECT MIN(d) AS d FROM (SELECT MIN(date) AS d FROM body_logs UNION ALL SELECT MIN(date) FROM meal_entries)')
+      .prepare(
+        `SELECT MIN(d) AS d FROM (
+           SELECT MIN(date) AS d FROM body_logs UNION ALL SELECT MIN(date) FROM meal_entries UNION ALL SELECT MIN(date) FROM workouts)`,
+      )
       .get() as { d: string | null };
     return r.d;
   }
@@ -51,6 +60,8 @@ export class StatsRepository {
     const mealMap = new Map(mealRows.map((m) => [m.date, m]));
 
     const goals = this.db.prepare('SELECT * FROM goals ORDER BY start_date').all() as GoalRow[];
+    const workoutMap = this.workouts.dailyKcal(from, to);
+    const deficitPct = this.workouts.deficitPct();
 
     const allDays = rangeDays(loadFrom, to);
     const ma = movingAverage(allDays.map((d) => ({ date: d, value: bodyMap.get(d)?.weightKg ?? null })));
@@ -62,6 +73,9 @@ export class StatsRepository {
       const goal = gi >= 0 ? goals[gi]! : null;
       const b = bodyMap.get(date);
       const m = mealMap.get(date);
+      const w = workoutMap.get(date) ?? null;
+      // 運動した日は、目標カロリー・炭水化物に上乗せする
+      const bonus = workoutBonus(w ?? 0, deficitPct);
       return {
         date,
         weightKg: b?.weightKg ?? null,
@@ -74,10 +88,11 @@ export class StatsRepository {
         fatG: m ? round(m.f, 1) : null,
         carbsG: m ? round(m.c, 1) : null,
         mealCount: m?.n ?? 0,
-        goalKcal: goal?.kcal ?? null,
+        workoutKcal: w,
+        goalKcal: goal ? goal.kcal + bonus.kcal : null,
         goalProteinG: goal?.protein_g ?? null,
         goalFatG: goal?.fat_g ?? null,
-        goalCarbsG: goal?.carbs_g ?? null,
+        goalCarbsG: goal ? goal.carbs_g + bonus.carbsG : null,
         goalWeightKg: goal?.target_weight_kg ?? null,
       };
     });
@@ -114,6 +129,21 @@ export class StatsRepository {
       },
       intake: this.meals.total(date),
       goal: this.goals.effective(date),
+      bonus: this.workouts.bonus(date),
+      energy: this.energy(date, latest?.weightKg ?? null),
     };
+  }
+
+  /** 1 日の消費の目安：基礎代謝 × 活動レベル ＋ 運動。基礎代謝が出せなければ null */
+  private energy(date: string, weightKg: number | null): Dashboard['energy'] {
+    const p = this.profile.get();
+    let bmr: number | null = p.bmrKcal;
+    if (bmr == null && p.sex && p.birthDate && p.heightCm && weightKg != null) {
+      bmr = bmrMifflin(p.sex, weightKg, p.heightCm, ageOn(p.birthDate, date));
+    }
+    if (bmr == null) return null;
+    const baseKcal = Math.round(bmr * p.activityLevel);
+    const workoutKcal = this.workouts.dailyKcal(date, date).get(date) ?? 0;
+    return { bmr, activityLevel: p.activityLevel, baseKcal, workoutKcal, totalKcal: baseKcal + workoutKcal };
   }
 }

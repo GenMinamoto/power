@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { targetPlan, type PlanWarning } from '../../shared/calc';
-import { ACTIVITY_LEVELS, DEFICIT_OPTIONS, LIMITS } from '../../shared/constants';
+import { ACTIVITY_LEVEL_WITH_WORKOUTS, ACTIVITY_LEVELS, DEFICIT_OPTIONS, LIMITS } from '../../shared/constants';
 import { ageOn, isValidDate, today } from '../../shared/date';
 import { profileInputSchema, type ProfileInput } from '../../shared/schemas';
 import type { Profile } from '../../shared/types';
@@ -221,6 +221,26 @@ export function PlanCalculator({
               </option>
             ))}
           </select>
+          {Number(f.activityLevel) === ACTIVITY_LEVEL_WITH_WORKOUTS ? (
+            <span className="pf-hint">運動した日は、記録画面の「運動」の分が目標に上乗せされます</span>
+          ) : (
+            <div className="notice activity-notice" role="note">
+              <span className="icon" aria-hidden>
+                !
+              </span>
+              <span>
+                運動は記録画面の「運動」から足す方式です。ここを運動込みの係数にすると二重に数えるので、「ほぼ運動しない（×1.2）」にしてください。
+                変えたあとは「目標の欄に入れる」→「目標を保存」で目標も作り直してください。{' '}
+                <button
+                  type="button"
+                  className="small-btn"
+                  onClick={() => setF((s) => ({ ...s, activityLevel: String(ACTIVITY_LEVEL_WITH_WORKOUTS) }))}
+                >
+                  ×1.2 にする
+                </button>
+              </span>
+            </div>
+          )}
         </div>
         <div className="pf-field">
           <label htmlFor="pf-deficitPct">減量ペース</label>

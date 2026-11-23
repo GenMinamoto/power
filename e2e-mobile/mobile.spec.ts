@@ -204,6 +204,83 @@ test('インポート：別の端末（空の状態）にエクスポートし�
   await ctx.close();
 });
 
+test('運動：消費を空欄にすると体重から計算し、目標への上乗せを表示する', async () => {
+  await page.goto(`record/${D}`);
+  await expect(page.getByLabel('体重')).toHaveValue('75');
+  const card = page.locator('.card').filter({ has: page.getByRole('heading', { name: '運動' }) });
+
+  // ランニング 5km・30分 → 75kg × 5km = 375kcal
+  await card.getByLabel('時間（分）').fill('30');
+  await card.getByLabel('距離（km）').fill('5');
+  await card.getByRole('button', { name: '追加' }).tap();
+  await expect(card.locator('.workout-row')).toHaveCount(1);
+  await expect(card.locator('.workout-row').first()).toContainText('375');
+
+  // 筋トレ 45分 → (5 − 1) × 75 × 0.75 = 225kcal。名前は種目に合わせて変わる
+  await card.getByLabel('種目').selectOption('strength');
+  await expect(card.getByLabel('名前')).toHaveValue('筋トレ');
+  await card.getByLabel('時間（分）').fill('45');
+  await card.getByRole('button', { name: '追加' }).tap();
+  await expect(card.locator('.workout-row')).toHaveCount(2);
+  await expect(card.locator('.workout-row').nth(1)).toContainText('225');
+
+  // 600kcal × (1 − 20%) = 480kcal を上乗せ
+  await expect(card.getByText(/運動 600kcal → 目標に/)).toContainText('+480kcal（炭水化物 +120g）');
+
+  // 筋トレで時間がないと計算できない
+  await card.getByLabel('種目').selectOption('strength');
+  await card.getByRole('button', { name: '追加' }).tap();
+  await expect(card.getByText(/時間か距離がないため/)).toBeVisible();
+});
+
+test('運動：ヘルスケアの内容（ショートカットがコピーしたもの）を取り込み、もう一度取り込むと上書き', async () => {
+  await page.goto(`record/${D}`);
+  const card = page.locator('.card').filter({ has: page.getByRole('heading', { name: '運動' }) });
+  await expect(card.getByRole('link', { name: '① ショートカットを実行' })).toHaveAttribute(
+    'href',
+    'shortcuts://run-shortcut?name=Power%E5%8F%96%E3%82%8A%E8%BE%BC%E3%81%BF',
+  );
+
+  await card.getByRole('button', { name: '手で貼り付ける' }).tap();
+  await card.getByLabel('コピーした内容を貼り付け').fill(`power date=${D} kind=run kcal=352.4 km=5.2 min=31.5`);
+  await card.getByRole('button', { name: '読み取る' }).tap();
+  await expect(card.getByRole('region', { name: '取り込む内容' })).toContainText('ランニング（ヘルスケア） 352kcal');
+  await card.getByRole('button', { name: 'この内容で保存' }).tap();
+  await expect(page.getByRole('status')).toHaveText('取り込みました');
+  const healthRows = card.locator('.workout-row').filter({ hasText: 'ヘルスケア' });
+  await expect(healthRows).toHaveCount(1);
+  await expect(healthRows.first()).toContainText('32分・5.2km');
+  await page.screenshot({ path: 'test-results/shots/m04-workouts.png', fullPage: true, caret: 'initial' });
+
+  // 保存すると貼り付け欄は閉じる
+  await expect(card.getByLabel('コピーした内容を貼り付け')).toHaveCount(0);
+  await card.getByRole('button', { name: '手で貼り付ける' }).tap();
+  await card.getByLabel('コピーした内容を貼り付け').fill(`power date=${D} kind=run kcal=400`);
+  await card.getByRole('button', { name: '読み取る' }).tap();
+  await card.getByRole('button', { name: 'この内容で保存' }).tap();
+  await expect(page.getByRole('status')).toHaveText('取り込みました（1件は前回の取り込みを上書き）');
+  await expect(healthRows).toHaveCount(1);
+  await expect(healthRows.first()).toContainText('400');
+
+  // 読み取れない内容
+  await card.getByRole('button', { name: '手で貼り付ける' }).tap();
+  await card.getByLabel('コピーした内容を貼り付け').fill('こんにちは');
+  await card.getByRole('button', { name: '読み取る' }).tap();
+  await expect(card.getByText(/Power 用の内容が見つかりません/)).toBeVisible();
+});
+
+test('目標・設定：活動レベルが ×1.2 でなければ知らせ、ボタンで ×1.2 にできる', async () => {
+  await page.goto('settings');
+  await expect(page.getByText(/運動は記録画面の「運動」から足す方式です/)).toBeVisible();
+  await page.getByRole('button', { name: '×1.2 にする' }).tap();
+  await expect(page.getByLabel('活動レベル')).toHaveValue('1.2');
+  await expect(page.getByText('運動した日は、記録画面の「運動」の分が目標に上乗せされます')).toBeVisible();
+  // 自動で保存される
+  await page.waitForTimeout(1000);
+  await page.reload();
+  await expect(page.getByLabel('活動レベル')).toHaveValue('1.2');
+});
+
 test('安全性：自分のサイト以外とは一切通信しておらず、エラーも出ていない', async () => {
   // ネットワークの通信（http/https/ws）だけを見る。ブラウザ自身の画面（edge://downloads など）は対象外
   const network = requests.filter((u) => /^(https?|wss?):/.test(u));

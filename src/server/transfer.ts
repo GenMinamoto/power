@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ACTIVITY_LEVELS, LIMITS, MEAL_TYPES } from '../shared/constants.js';
+import { ACTIVITY_LEVELS, LIMITS, MEAL_TYPES, WORKOUT_KINDS } from '../shared/constants.js';
 import { isValidDate } from '../shared/date.js';
 import { nowIso, transaction, type SqlDb as Db } from './dbCore.js';
 import { HttpError } from './errors.js';
@@ -84,6 +84,20 @@ const goalSchema = z.object({
   createdAt: ts,
 });
 
+const workoutSchema = z.object({
+  id,
+  date,
+  kind: z.enum(WORKOUT_KINDS),
+  name: z.string().min(1).max(LIMITS.foodNameLength),
+  durationMin: num(LIMITS.durationMin.min, LIMITS.durationMin.max).nullable(),
+  distanceKm: z.number().gt(0).max(LIMITS.distanceKm.max).nullable(),
+  kcal: num(0, LIMITS.workoutKcalMax),
+  source: z.enum(['manual', 'health']),
+  memo: text(LIMITS.memoLength).nullable(),
+  createdAt: ts,
+  updatedAt: ts,
+});
+
 const unique = <T>(items: T[], key: (t: T) => unknown) => new Set(items.map(key)).size === items.length;
 
 export const exportSchema = z
@@ -96,6 +110,8 @@ export const exportSchema = z
     foods: z.array(foodSchema),
     mealEntries: z.array(mealEntrySchema),
     goals: z.array(goalSchema),
+    /** 運動（フェーズ 7 で追加。それより前に書き出したファイルにはない） */
+    workouts: z.array(workoutSchema).default([]),
   })
   .superRefine((v, ctx) => {
     const dup = (path: string, ok: boolean) =>
@@ -104,6 +120,7 @@ export const exportSchema = z
     dup('foods', unique(v.foods, (f) => f.id));
     dup('mealEntries', unique(v.mealEntries, (m) => m.id));
     dup('goals', unique(v.goals, (g) => g.id) && unique(v.goals, (g) => g.startDate));
+    dup('workouts', unique(v.workouts, (w) => w.id));
     const foodIds = new Set(v.foods.map((f) => f.id));
     v.mealEntries.forEach((m, i) => {
       if (m.foodId != null && !foodIds.has(m.foodId)) {
@@ -114,7 +131,7 @@ export const exportSchema = z
 export type ExportData = z.infer<typeof exportSchema>;
 
 export type ImportResult = {
-  imported: { bodyLogs: number; foods: number; mealEntries: number; goals: number };
+  imported: { bodyLogs: number; foods: number; mealEntries: number; goals: number; workouts: number };
   backupFile: string;
 };
 
@@ -198,6 +215,19 @@ export class TransferService {
         targetDate: r.target_date as string | null,
         createdAt: r.created_at as string,
       })),
+      workouts: all('SELECT * FROM workouts ORDER BY date, id').map((r) => ({
+        id: r.id as number,
+        date: r.date as string,
+        kind: r.kind as ExportData['workouts'][number]['kind'],
+        name: r.name as string,
+        durationMin: r.duration_min as number | null,
+        distanceKm: r.distance_km as number | null,
+        kcal: r.kcal as number,
+        source: r.source as 'manual' | 'health',
+        memo: r.memo as string | null,
+        createdAt: r.created_at as string,
+        updatedAt: r.updated_at as string,
+      })),
     };
   }
 
@@ -208,7 +238,7 @@ export class TransferService {
     try {
       transaction(db, () => {
         // 食事 → 食品の順に消す（外部キー）
-        for (const t of ['meal_entries', 'foods', 'body_logs', 'goals']) db.exec(`DELETE FROM ${t}`);
+        for (const t of ['meal_entries', 'foods', 'body_logs', 'goals', 'workouts']) db.exec(`DELETE FROM ${t}`);
 
         const p = data.profile;
         db.prepare(
@@ -246,6 +276,14 @@ export class TransferService {
         for (const g of data.goals) {
           goal.run(g.id, g.startDate, g.kcal, g.proteinG, g.fatG, g.carbsG, g.targetWeightKg, g.targetBodyFatPct, g.targetDate, g.createdAt);
         }
+
+        const workout = db.prepare(
+          `INSERT INTO workouts (id, date, kind, name, duration_min, distance_km, kcal, source, memo, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        );
+        for (const w of data.workouts) {
+          workout.run(w.id, w.date, w.kind, w.name, w.durationMin, w.distanceKm, w.kcal, w.source, w.memo, w.createdAt, w.updatedAt);
+        }
       });
     } catch (e) {
       // 検証をすり抜けた制約違反など。ロールバック済みなので元のデータのまま
@@ -257,6 +295,7 @@ export class TransferService {
         foods: data.foods.length,
         mealEntries: data.mealEntries.length,
         goals: data.goals.length,
+        workouts: data.workouts.length,
       },
       backupFile,
     };

@@ -7,6 +7,32 @@ export const MEAL_LABELS: Record<MealType, string> = {
   other: 'その他',
 };
 
+export const WORKOUT_KINDS = ['run', 'walk', 'strength', 'cycle', 'other'] as const;
+export type WorkoutKind = (typeof WORKOUT_KINDS)[number];
+export const WORKOUT_LABELS: Record<WorkoutKind, string> = {
+  run: 'ランニング',
+  walk: 'ウォーキング',
+  strength: '筋トレ',
+  cycle: '自転車',
+  other: 'その他',
+};
+
+/**
+ * 消費カロリーの目安（kcal の入力を省略したとき）。
+ * - perKgKm：距離があるとき「体重 × 距離 × 係数」（ランニング ≒ 1.0、ウォーキング ≒ 0.5）
+ * - met：時間だけのとき「(MET − 1) × 体重 × 時間」。安静時の分は 1 日の消費（基礎代謝 × 1.2）に含まれるので引く
+ */
+export const WORKOUT_ESTIMATE: Record<WorkoutKind, { perKgKm: number | null; met: number | null }> = {
+  run: { perKgKm: 1.0, met: 9.0 },
+  walk: { perKgKm: 0.5, met: 3.5 },
+  strength: { perKgKm: null, met: 5.0 },
+  cycle: { perKgKm: null, met: 6.8 },
+  other: { perKgKm: null, met: null },
+};
+
+/** 運動を記録から足す方式（案 A）で使う活動レベル */
+export const ACTIVITY_LEVEL_WITH_WORKOUTS = 1.2;
+
 export const ACTIVITY_LEVELS = [
   { value: 1.2, label: 'ほぼ運動しない（デスクワーク中心）' },
   { value: 1.375, label: '軽い運動（週1〜3回）' },
@@ -43,6 +69,9 @@ export const LIMITS = {
   fatPct: { min: 15, max: 40 },
   goalKcal: { min: 800, max: 6000 },
   goalCarbsMax: 1000,
+  workoutKcalMax: 5000,
+  durationMin: { min: 1, max: 1440 },
+  distanceKm: { min: 0.01, max: 500 },
 } as const;
 
 /** 体重の 7 日平均の週あたり変化（体重比 %）の目安。これより速く減ると筋肉が落ちやすい */

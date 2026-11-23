@@ -199,7 +199,8 @@ function MealTable({ days, map, rowProps }: { days: string[]; map: Map<string, D
           <th>日付</th>
           <th>品数</th>
           <th>kcal</th>
-          <th title="その日の目標カロリーに対する割合">目標比</th>
+          <th title="その日の目標カロリー（運動した日は上乗せ後）に対する割合">目標比</th>
+          <th title="運動の消費カロリー">運動</th>
           <th>P</th>
           <th>F</th>
           <th>C</th>
@@ -219,12 +220,13 @@ function MealTable({ days, map, rowProps }: { days: string[]; map: Map<string, D
                   <td>{s.mealCount}</td>
                   <td>{s.kcal!.toLocaleString()}</td>
                   <td className={pct != null && pct > 100 ? 'over-text' : undefined}>{pct == null ? '—' : `${pct}%`}</td>
+                  <td>{s.workoutKcal == null ? '—' : s.workoutKcal.toLocaleString()}</td>
                   <td>{fmtG(s.proteinG!)}</td>
                   <td>{fmtG(s.fatG!)}</td>
                   <td>{fmtG(s.carbsG!)}</td>
                 </>
               ) : (
-                <EmptyCells span={6} />
+                <EmptyCells span={7} />
               )}
             </tr>
           );

@@ -73,4 +73,22 @@ export const MIGRATIONS: string[] = [
     created_at           TEXT NOT NULL
   );
   `,
+
+  // 2: 運動の記録
+  /* sql */ `
+  CREATE TABLE workouts (
+    id            INTEGER PRIMARY KEY,
+    date          TEXT NOT NULL,
+    kind          TEXT NOT NULL CHECK (kind IN ('run','walk','strength','cycle','other')),
+    name          TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 100),
+    duration_min  REAL CHECK (duration_min BETWEEN 1 AND 1440),
+    distance_km   REAL CHECK (distance_km > 0 AND distance_km <= 500),
+    kcal          REAL NOT NULL CHECK (kcal BETWEEN 0 AND 5000),
+    source        TEXT NOT NULL DEFAULT 'manual' CHECK (source IN ('manual','health')),
+    memo          TEXT CHECK (length(memo) <= 500),
+    created_at    TEXT NOT NULL,
+    updated_at    TEXT NOT NULL
+  );
+  CREATE INDEX idx_workouts_date ON workouts(date);
+  `,
 ];

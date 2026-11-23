@@ -1,8 +1,30 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { kcalFromPfc, round, sumNutrients, type Nutrients } from '../../shared/calc';
 import { MEAL_TYPES, type MealType } from '../../shared/constants';
-import type { BodyLogInput, CopyMealsInput, FoodInput, GoalInput, MealEntryInput, ProfileInput } from '../../shared/schemas';
-import type { BackupInfo, BodyLog, BodyLogDetail, DailyStat, Dashboard, DayMeals, Food, Goal, MealEntry, Profile } from '../../shared/types';
+import type {
+  BodyLogInput,
+  CopyMealsInput,
+  FoodInput,
+  GoalInput,
+  HealthWorkoutInput,
+  MealEntryInput,
+  ProfileInput,
+  WorkoutInput,
+} from '../../shared/schemas';
+import type {
+  BackupInfo,
+  BodyLog,
+  BodyLogDetail,
+  DailyStat,
+  Dashboard,
+  DayMeals,
+  DayWorkouts,
+  Food,
+  Goal,
+  MealEntry,
+  Profile,
+  Workout,
+} from '../../shared/types';
 import { api } from './client';
 
 export const keys = {
@@ -15,6 +37,7 @@ export const keys = {
   backups: ['backups'] as const,
   profile: ['profile'] as const,
   goals: ['goals'] as const,
+  workouts: (date: string) => ['workouts', date] as const,
 };
 
 export const useBodyLog = (date: string) =>
@@ -217,6 +240,63 @@ export function useDeleteFood() {
   });
 }
 
+// ── 運動 ─────────────────────────────
+
+export const useWorkouts = (date: string) =>
+  useQuery({ queryKey: keys.workouts(date), queryFn: () => api<DayWorkouts>(`/api/workouts?date=${date}`) });
+
+/** 運動が変わると、目標への上乗せ・ホーム・グラフが変わる */
+function useInvalidateWorkouts() {
+  const qc = useQueryClient();
+  return () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ['workouts'] }),
+      qc.invalidateQueries({ queryKey: ['dashboard'] }),
+      qc.invalidateQueries({ queryKey: keys.statsDaily }),
+    ]);
+}
+
+export function useAddWorkout() {
+  const invalidate = useInvalidateWorkouts();
+  return useMutation({
+    mutationFn: (input: WorkoutInput) => api<Workout>('/api/workouts', { method: 'POST', body: input }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateWorkout() {
+  const invalidate = useInvalidateWorkouts();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: number; input: WorkoutInput }) =>
+      api<Workout>(`/api/workouts/${id}`, { method: 'PUT', body: input }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteWorkout() {
+  const invalidate = useInvalidateWorkouts();
+  return useMutation({
+    mutationFn: (id: number) => api<void>(`/api/workouts/${id}`, { method: 'DELETE' }),
+    onSuccess: invalidate,
+  });
+}
+
+/** ヘルスケアから取り込んだ複数件を順に保存する。上書きした件数も返す */
+export function useImportHealthWorkouts() {
+  const invalidate = useInvalidateWorkouts();
+  return useMutation({
+    mutationFn: async (items: HealthWorkoutInput[]) => {
+      let replaced = 0;
+      for (const item of items) {
+        const r = await api<{ entry: Workout; replaced: boolean }>('/api/workouts/health', { method: 'POST', body: item });
+        if (r.replaced) replaced++;
+      }
+      return { saved: items.length, replaced };
+    },
+    onSettled: invalidate,
+  });
+}
+
 // ── プロフィール・目標 ───────────────
 
 export const useProfile = () => useQuery({ queryKey: keys.profile, queryFn: () => api<Profile>('/api/profile') });
@@ -225,7 +305,13 @@ export function useSaveProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: ProfileInput) => api<Profile>('/api/profile', { method: 'PUT', body: input }),
-    onSuccess: (p) => qc.setQueryData(keys.profile, p),
+    onSuccess: (p) => {
+      qc.setQueryData(keys.profile, p);
+      // 減量ペース・活動レベルが変わると、運動の上乗せ・消費の目安が変わる
+      void qc.invalidateQueries({ queryKey: ['workouts'] });
+      void qc.invalidateQueries({ queryKey: ['dashboard'] });
+      void qc.invalidateQueries({ queryKey: keys.statsDaily });
+    },
   });
 }
 
