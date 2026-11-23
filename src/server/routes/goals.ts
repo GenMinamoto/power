@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { dateQuerySchema, goalInputSchema, idParamSchema, profileInputSchema } from '../../shared/schemas.js';
-import type { Db } from '../db.js';
+import type { SqlDb as Db } from '../dbCore.js';
 import { notFound } from '../errors.js';
 import { GoalRepository } from '../repositories/goals.js';
 import { ProfileRepository } from '../repositories/profile.js';

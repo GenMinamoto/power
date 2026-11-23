@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { bodyLogInputSchema, dateParamSchema, rangeQuerySchema } from '../../shared/schemas.js';
-import type { Db } from '../db.js';
+import type { SqlDb as Db } from '../dbCore.js';
 import { notFound } from '../errors.js';
 import { BodyLogRepository } from '../repositories/bodyLogs.js';
 

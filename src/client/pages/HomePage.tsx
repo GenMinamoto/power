@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { addDays, diffDays, formatJa, formatShort, today } from '../../shared/date';
 import { useDashboard, useStatsDaily } from '../api/hooks';
 import { SparseLineChart, WeightChart } from '../components/charts';
+import { ExportReminder } from '../components/DataManagement';
 import { ErrorNotice, WarningNotice } from '../components/Feedback';
 import { GoalProgress } from '../components/GoalProgress';
 import { IntakeProgress } from '../components/IntakeProgress';
@@ -39,6 +40,7 @@ export function HomePage() {
         </Link>
       </div>
       <ErrorNotice error={dash.error ?? stats.error} />
+      <ExportReminder />
 
       {d && (
         <>

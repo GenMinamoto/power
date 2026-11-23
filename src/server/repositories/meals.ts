@@ -2,7 +2,7 @@ import { kcalFromPfc, round, sumNutrients, type Nutrients } from '../../shared/c
 import { MEAL_TYPES, type MealType } from '../../shared/constants.js';
 import type { CopyMealsInput, MealEntryInput } from '../../shared/schemas.js';
 import type { DayMeals, MealEntry } from '../../shared/types.js';
-import { nowIso, transaction, type Db } from '../db.js';
+import { nowIso, transaction, type SqlDb as Db } from '../dbCore.js';
 import { HttpError, notFound } from '../errors.js';
 import { GoalRepository } from './goals.js';
 

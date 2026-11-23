@@ -1,7 +1,7 @@
 import { round } from '../../shared/calc.js';
 import type { ProfileInput } from '../../shared/schemas.js';
 import type { Profile, Sex } from '../../shared/types.js';
-import { nowIso, type Db } from '../db.js';
+import { nowIso, type SqlDb as Db } from '../dbCore.js';
 
 type Row = {
   sex: Sex | null;

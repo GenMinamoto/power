@@ -15,5 +15,5 @@
     "types": ["node", "vite/client"],
     "noEmit": true
   },
-  "include": ["src", "tests", "e2e", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"]
+  "include": ["src", "tests", "e2e", "e2e-mobile", "vite.config.ts", "vitest.config.ts", "playwright.config.ts", "playwright.mobile.config.ts"]
 }

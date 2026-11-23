@@ -283,3 +283,13 @@ export function useImportData() {
     onSuccess: () => qc.resetQueries(),
   });
 }
+
+/** スマホ版：端末内のバックアップに戻す。成功したらすべての画面データを取り直す */
+export function useRestoreBackup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: string) =>
+      api<{ restored: string; backupFile: string }>('/api/backups/restore', { method: 'POST', body: { file } }),
+    onSuccess: () => qc.resetQueries(),
+  });
+}

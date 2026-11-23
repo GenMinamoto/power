@@ -1,7 +1,7 @@
 import { kcalFromPfc, round } from '../../shared/calc.js';
 import type { FoodInput } from '../../shared/schemas.js';
 import type { Food } from '../../shared/types.js';
-import { nowIso, type Db } from '../db.js';
+import { nowIso, type SqlDb as Db } from '../dbCore.js';
 import { notFound } from '../errors.js';
 
 type Row = {

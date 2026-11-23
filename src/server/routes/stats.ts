@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { weeklySummary } from '../../shared/calc.js';
 import { today, weekStart } from '../../shared/date.js';
 import { dateQuerySchema, rangeQuerySchema } from '../../shared/schemas.js';
-import type { Db } from '../db.js';
+import type { SqlDb as Db } from '../dbCore.js';
 import { StatsRepository } from '../repositories/stats.js';
 
 export function statsRoutes(app: FastifyInstance, db: Db): void {

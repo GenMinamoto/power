@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { foodInputSchema, foodQuerySchema, idParamSchema } from '../../shared/schemas.js';
-import type { Db } from '../db.js';
+import type { SqlDb as Db } from '../dbCore.js';
 import { notFound } from '../errors.js';
 import { FoodRepository } from '../repositories/foods.js';
 

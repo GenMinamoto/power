@@ -1,7 +1,7 @@
 import { round } from '../../shared/calc.js';
 import type { GoalInput } from '../../shared/schemas.js';
 import type { Goal } from '../../shared/types.js';
-import { nowIso, type Db } from '../db.js';
+import { nowIso, type SqlDb as Db } from '../dbCore.js';
 
 type Row = {
   id: number;

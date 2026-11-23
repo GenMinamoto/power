@@ -33,10 +33,15 @@ h2 { font-size: 1.05rem; margin: 0 0 12px; }
   .sidenav {
     position: fixed; bottom: 0; top: auto; left: 0; right: 0; height: auto; width: auto; z-index: 10;
     display: flex; justify-content: space-around; padding: 4px; border-right: 0; border-top: 1px solid var(--border);
+    /* iPhone の画面下のバー（ホームインジケータ）に重ならないように */
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
   }
   .brand, .nav-link .soon { display: none; }
   .nav-link { flex-direction: column; gap: 0; font-size: 0.72rem; padding: 6px 4px; }
-  .main { padding: 16px 16px 88px; }
+  .main {
+    padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(88px + env(safe-area-inset-bottom))
+      calc(16px + env(safe-area-inset-left));
+  }
 }
 
 /* ── 部品 ── */
@@ -125,7 +130,7 @@ table.data tr.clickable:hover td { background: var(--surface-2); }
   background: var(--text-primary); color: var(--bg); padding: 10px 18px; border-radius: 999px;
   font-size: 0.9rem; z-index: 50; box-shadow: 0 4px 14px rgb(0 0 0 / 0.2);
 }
-@media (max-width: 640px) { .toast { bottom: 84px; } }
+@media (max-width: 640px) { .toast { bottom: calc(84px + env(safe-area-inset-bottom)); } }
 .error-banner { margin-bottom: 16px; }
 
 .delta-down { color: var(--good); }
@@ -350,4 +355,17 @@ table.data td.empty-cell { text-align: left; color: var(--text-muted); font-size
   table.data.history-table th, table.data.history-table td { padding: 7px 5px; font-size: 0.86rem; }
   .history-table th { white-space: nowrap; }
   .history-table .memo-cell { display: none; }
+}
+/* スマホ版：端末内バックアップからの復元 */
+.restore-list summary { cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; padding: 4px 0; }
+.restore-list ul { list-style: none; margin: 0; padding: 0; }
+.restore-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; font-size: 0.9rem;
+}
+.restore-list li .badge { margin-left: 6px; }
+
+/* iPhone の Safari は 16px 未満の入力欄をタップすると画面を拡大してしまうので、スマホ幅では 16px にする */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px; }
 }

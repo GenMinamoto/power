@@ -1,7 +1,7 @@
 import { fatMass, leanBodyMass, round } from '../../shared/calc.js';
 import type { BodyLogInput } from '../../shared/schemas.js';
 import type { BodyFatPoint, BodyLog, BodyLogDetail } from '../../shared/types.js';
-import { nowIso, type Db } from '../db.js';
+import { nowIso, type SqlDb as Db } from '../dbCore.js';
 
 type Row = { date: string; weight_kg: number | null; body_fat_pct: number | null; memo: string | null };
 

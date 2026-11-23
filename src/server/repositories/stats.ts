@@ -2,7 +2,7 @@ import { BODY_FAT_REMINDER_DAYS, MA_WINDOW } from '../../shared/constants.js';
 import { movingAverage, round } from '../../shared/calc.js';
 import { addDays, diffDays, rangeDays } from '../../shared/date.js';
 import type { Dashboard, DailyStat } from '../../shared/types.js';
-import type { Db } from '../db.js';
+import type { SqlDb as Db } from '../dbCore.js';
 import { BodyLogRepository } from './bodyLogs.js';
 import { GoalRepository } from './goals.js';
 import { MealRepository } from './meals.js';

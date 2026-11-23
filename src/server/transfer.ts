@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { ACTIVITY_LEVELS, LIMITS, MEAL_TYPES } from '../shared/constants.js';
 import { isValidDate } from '../shared/date.js';
-import type { BackupService } from './backup.js';
-import { nowIso, transaction, type Db } from './db.js';
+import { nowIso, transaction, type SqlDb as Db } from './dbCore.js';
 import { HttpError } from './errors.js';
 
 // エクスポート / インポート（全データの JSON）。
@@ -121,10 +120,15 @@ export type ImportResult = {
 
 type Rec = Record<string, unknown>;
 
+/** インポート直前のバックアップを作るもの（PC 版はファイル、スマホ版はブラウザ内に保存） */
+export interface PreImportBackup {
+  createPreImport(): string;
+}
+
 export class TransferService {
   constructor(
     private db: Db,
-    private backups: BackupService,
+    private backups: PreImportBackup,
   ) {}
 
   exportAll(): ExportData {

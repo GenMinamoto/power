@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { ApiError } from '../api/client';
-import { useBackups, useCreateBackup, useImportData } from '../api/hooks';
-import { ErrorNotice, useFeedback } from './Feedback';
+import { useBackups, useCreateBackup, useImportData, useRestoreBackup } from '../api/hooks';
+import { IS_MOBILE } from '../platform';
+import { daysSinceExport, exportToFile, lastExportAt } from '../utils/exportFile';
+import { ErrorNotice, useFeedback, WarningNotice } from './Feedback';
 
 type Counts = { bodyLogs: number; foods: number; mealEntries: number; goals: number };
 
@@ -26,6 +29,9 @@ export function DataManagement({ onImported }: { onImported: () => void }) {
   const { toast } = useFeedback();
   const fileRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<unknown>(null);
+  const [exportedAt, setExportedAt] = useState(lastExportAt);
   const latest = backups.data?.find((b) => !b.file.includes('pre-import')) ?? backups.data?.[0];
 
   async function onFile(file: File) {
@@ -69,18 +75,58 @@ export function DataManagement({ onImported }: { onImported: () => void }) {
   return (
     <div className="card stack">
       <h2 style={{ margin: 0 }}>データ</h2>
-      <p className="small secondary" style={{ margin: 0 }}>
-        データは PC 内の <code>data/power.db</code> に保存されています。起動するたびに 1 日 1 回、<code>data/backups/</code>{' '}
-        に自動でバックアップします（30日分を保持）。
-      </p>
+      {IS_MOBILE ? (
+        <p className="small secondary" style={{ margin: 0 }}>
+          データはこのスマホの中（Power 専用の保存場所）にだけ保存され、外部には送信しません。開くたびに 1 日 1
+          回、スマホの中に自動でバックアップします（30日分を保持）。
+          <br />
+          スマホの故障・紛失や、ブラウザのデータ削除に備えて、<strong>ときどき「エクスポート」で iCloud Drive などに保存</strong>
+          してください。
+        </p>
+      ) : (
+        <p className="small secondary" style={{ margin: 0 }}>
+          データは PC 内の <code>data/power.db</code> に保存されています。起動するたびに 1 日 1 回、<code>data/backups/</code>{' '}
+          に自動でバックアップします（30日分を保持）。
+        </p>
+      )}
 
       <div className="data-actions">
-        <div className="data-action">
-          <a className="button" href="/api/export" download>
-            エクスポート
-          </a>
-          <span className="small muted">全データを JSON ファイルに書き出します（PC の移行や控えに）。</span>
-        </div>
+        {IS_MOBILE ? (
+          <div className="data-action">
+            <button
+              type="button"
+              disabled={exporting}
+              onClick={async () => {
+                setExportError(null);
+                setExporting(true);
+                try {
+                  if (await exportToFile()) {
+                    setExportedAt(lastExportAt());
+                    toast('書き出しました');
+                  }
+                } catch (e) {
+                  setExportError(e);
+                } finally {
+                  setExporting(false);
+                }
+              }}
+            >
+              {exporting ? '書き出し中…' : 'エクスポート'}
+            </button>
+            <span className="small muted">
+              全データを JSON ファイルに書き出します。共有メニューの「ファイルに保存」で iCloud Drive などへ。
+              <br />
+              {exportedAt ? `最終エクスポート：${exportedAt.toLocaleString('ja-JP')}` : 'まだエクスポートしていません'}
+            </span>
+          </div>
+        ) : (
+          <div className="data-action">
+            <a className="button" href="/api/export" download>
+              エクスポート
+            </a>
+            <span className="small muted">全データを JSON ファイルに書き出します（PC の移行や控えに）。</span>
+          </div>
+        )}
         <div className="data-action">
           <button type="button" onClick={() => fileRef.current?.click()} disabled={imp.isPending}>
             {imp.isPending ? '読み込み中…' : 'インポート…'}
@@ -123,7 +169,65 @@ export function DataManagement({ onImported }: { onImported: () => void }) {
           <span>{importError}</span>
         </div>
       )}
-      <ErrorNotice error={create.error ?? backups.error} />
+      <ErrorNotice error={exportError ?? create.error ?? backups.error} />
+      {IS_MOBILE && backups.data && backups.data.length > 0 && <RestoreList onRestored={onImported} />}
     </div>
   );
 }
+
+/** スマホ版：端末内のバックアップの一覧と復元 */
+function RestoreList({ onRestored }: { onRestored: () => void }) {
+  const backups = useBackups();
+  const restore = useRestoreBackup();
+  const { toast } = useFeedback();
+
+  return (
+    <details className="restore-list">
+      <summary>スマホ内のバックアップから戻す（{backups.data?.length ?? 0}件）</summary>
+      <p className="small muted">
+        選んだ時点の状態に戻します。戻す直前の状態も自動でバックアップするので、やり直せます。
+      </p>
+      <ul>
+        {backups.data?.map((b) => (
+          <li key={b.file}>
+            <span>
+              {new Date(b.createdAt).toLocaleString('ja-JP')}
+              {b.file.includes('pre-import') && <span className="badge">読み込み・復元の直前</span>}
+            </span>
+            <button
+              type="button"
+              disabled={restore.isPending}
+              onClick={async () => {
+                const when = new Date(b.createdAt).toLocaleString('ja-JP');
+                if (!window.confirm(`${when} の状態に戻します。現在のデータは置き換えられます（事前に自動でバックアップします）。よろしいですか？`)) return;
+                await restore.mutateAsync(b.file);
+                onRestored();
+                toast(`${when} の状態に戻しました`);
+              }}
+            >
+              この時点に戻す
+            </button>
+          </li>
+        ))}
+      </ul>
+      <ErrorNotice error={restore.error} />
+    </details>
+  );
+}
+
+/** スマホ版のホーム：しばらくエクスポートしていなければ知らせる */
+function MobileExportReminder() {
+  const backups = useBackups();
+  const days = daysSinceExport();
+  // 何日か使ってから（バックアップができてから）知らせる
+  if (!backups.data?.length || (days != null && days < 7)) return null;
+  return (
+    <WarningNotice>
+      {days == null ? 'まだ一度もエクスポートしていません。' : `最後のエクスポートから${days}日たちました。`}
+      スマホの故障や紛失に備えて、<Link to="/settings">目標・設定</Link>の「エクスポート」で iCloud Drive
+      などに保存しておきましょう。
+    </WarningNotice>
+  );
+}
+
+export const ExportReminder = IS_MOBILE ? MobileExportReminder : () => null;

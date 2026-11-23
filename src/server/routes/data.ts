@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { today } from '../../shared/date.js';
 import type { BackupService } from '../backup.js';
-import type { Db } from '../db.js';
+import type { SqlDb as Db } from '../dbCore.js';
 import { exportSchema, TransferService } from '../transfer.js';
 
 /** インポートで受け付ける最大サイズ */
